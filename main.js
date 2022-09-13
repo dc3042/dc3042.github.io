@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 
 // Graphics variables
 let container, stats;
@@ -24,6 +25,7 @@ const softBodies = [];
 const margin = 0.05;
 let transformAux1;
 let softBodyHelpers;
+let object;
 
 Ammo().then( function ( AmmoLib ) {
 
@@ -42,6 +44,50 @@ function init() {
 
   createObjects();
 
+  function loadModel() {
+
+    object.traverse( function ( child ) {
+
+      if ( child.isMesh ) child.material.map = texture;
+
+    } );
+    
+    const shape = new Ammo.btBoxShape( new Ammo.btVector3(  2, 0.7, 0.4 ) );
+    shape.setMargin( 0.05 );
+
+    pos.set( 0, 10, 0 );
+    quat.set( 0, 0, 0, 1 );
+    createRigidBody( object, shape, 15, pos, quat );
+  }
+
+  const manager = new THREE.LoadingManager( loadModel );
+
+  // texture
+
+  const texture = textureLoader.load( 'colors.png' );
+
+  // model
+
+  function onProgress( xhr ) {
+
+    if ( xhr.lengthComputable ) {
+
+      const percentComplete = xhr.loaded / xhr.total * 100;
+      console.log( 'model ' + Math.round( percentComplete, 2 ) + '% downloaded' );
+
+    }
+
+  }
+
+  function onError() {}
+
+  const loader = new OBJLoader( manager );
+  loader.load( 'DAVID.obj', function ( obj ) {
+
+    object = obj;
+
+  }, onProgress, onError );
+
   initInput();
 
 }
@@ -55,7 +101,7 @@ function initGraphics() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xbfd1e5 );
 
-  camera.position.set( - 7, 5, 8 );
+  camera.position.set( 0, 5, 7 );
 
   renderer = new THREE.WebGLRenderer();
   renderer.setPixelRatio( window.devicePixelRatio );
@@ -138,20 +184,20 @@ function createObjects() {
   // Create soft volumes
   const volumeMass = 15;
 
-  const sphereGeometry = new THREE.SphereGeometry( 1.5, 40, 25 );
-  sphereGeometry.translate( 5, 5, 0 );
+  const sphereGeometry = new THREE.SphereGeometry( 1, 40, 25 );
+  sphereGeometry.translate( 3, 3, 0 );
   createSoftVolume( sphereGeometry, volumeMass, 250 );
 
   const boxGeometry = new THREE.BoxGeometry( 1, 1, 5, 4, 4, 20 );
-  boxGeometry.translate( - 2, 5, 0 );
+  boxGeometry.translate( - 3, 3, 0 );
   createSoftVolume( boxGeometry, volumeMass, 120 );
 
   // Ramp
-  pos.set( 3, 1, 0 );
-  quat.setFromAxisAngle( new THREE.Vector3( 0, 0, 1 ), 30 * Math.PI / 180 );
-  const obstacle = createParalellepiped( 10, 1, 4, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0x606060 } ) );
-  obstacle.castShadow = true;
-  obstacle.receiveShadow = true;
+  //pos.set( 3, 1, 0 );
+  //quat.setFromAxisAngle( new THREE.Vector3( 0, 0, 1 ), 30 * Math.PI / 180 );
+  //const obstacle = createParalellepiped( 10, 1, 4, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0x606060 } ) );
+  //obstacle.castShadow = true;
+  //obstacle.receiveShadow = true;
 
 }
 
