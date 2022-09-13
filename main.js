@@ -4,6 +4,8 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 // Graphics variables
 let container, stats;
@@ -44,57 +46,260 @@ function init() {
 
   createObjects();
 
-  function loadModel() {
+  initName();
 
-    object.traverse( function ( child ) {
-
-      if ( child.isMesh ) child.material.map = texture;
-
-    } );
-    
-    const shape = new Ammo.btBoxShape( new Ammo.btVector3(  2, 0.7, 0.4 ) );
-    shape.setMargin( 0.05 );
-
-    pos.set( 0, 10, 0 );
-    quat.set( 0, 0, 0, 1 );
-    createRigidBody( object, shape, 15, pos, quat );
-  }
-
-  const manager = new THREE.LoadingManager( loadModel );
-
-  // texture
-
-  const texture = textureLoader.load( 'colors.png' );
-
-  // model
-
-  function onProgress( xhr ) {
-
-    if ( xhr.lengthComputable ) {
-
-      const percentComplete = xhr.loaded / xhr.total * 100;
-      console.log( 'model ' + Math.round( percentComplete, 2 ) + '% downloaded' );
-
-    }
-
-  }
-
-  function onError() {}
-
-  const loader = new OBJLoader( manager );
-  loader.load( 'DAVID.obj', function ( obj ) {
-
-    object = obj;
-
-  }, onProgress, onError );
+  initWalkingBoy();
 
   initInput();
 
 }
 
+let model, skeleton, mixer;
+var enableRaycasting = true;
+
+const crossFadeControls = [];
+
+let currentBaseAction = 'Walk';
+const baseActions = {
+  Walk: { weight: 1 }
+};
+let panelSettings, numAnimations, animations = [];
+
+function initWalkingBoy(){
+
+
+  const loader = new GLTFLoader();
+    loader.load( 'WalkingBoy.glb', function ( gltf ) {
+
+      model = gltf.scene;
+      scene.add( model );
+
+      model.traverse( function ( object ) {
+
+        if ( object.isMesh ) {
+          object.castShadow = true; 
+        }
+      } );
+
+      skeleton = new THREE.SkeletonHelper( model );
+      skeleton.visible = false;
+      scene.add( skeleton );
+
+      const shape = new Ammo.btBoxShape( new Ammo.btVector3(  0.2, 0, 0.2 ) );
+      shape.setMargin( 0.1 );
+
+      pos.set( 0, 0, -1 );
+      quat.set( 0, 0, 0, 1 );
+      createRigidBody( model, shape, 15, pos, quat );
+
+      animations = gltf.animations;
+      mixer = new THREE.AnimationMixer( model );
+
+      numAnimations = animations.length;
+
+      for ( let i = 0; i !== numAnimations; ++ i ) {
+
+        let clip = animations[ i ];
+        const name = clip.name;
+
+        if ( baseActions[ name ] ) {
+
+          const action = mixer.clipAction( clip ).play();
+          activateAction( action );
+          baseActions[ name ].action = action;
+        } 
+
+      }
+
+      createPanel();
+
+    } );
+}
+
+function createPanel() {
+
+  const panel = new GUI( { width: 500 } );
+
+  panelSettings = {};
+
+  const baseNames = ['None', ...Object.keys( baseActions )];
+
+  for ( let i = 0, l = baseNames.length; i !== l; ++ i ) {
+
+    const name = baseNames[ i ];
+    const settings = baseActions[ name ];
+    panelSettings[ name ] = function () {
+
+      const currentSettings = baseActions[ currentBaseAction ];
+      const currentAction = currentSettings ? currentSettings.action : null;
+      const action = settings ? settings.action : null;
+
+      if ( currentAction !== action ) {
+
+        prepareCrossFade( currentAction, action, 0.35 );
+
+      }
+
+    };
+
+    crossFadeControls.push( panel.add( panelSettings, name ) );
+
+  }
+
+  crossFadeControls.forEach( function ( control ) {
+
+    control.setInactive = function () {
+
+      control.domElement.classList.add( 'control-inactive' );
+
+    };
+
+    control.setActive = function () {
+
+      control.domElement.classList.remove( 'control-inactive' );
+
+    };
+
+    const settings = baseActions[ control.property ];
+
+    if (!settings || ! settings.weight ) {
+
+      control.setInactive();
+
+    }
+
+    if (control.property == currentBaseAction){
+      control.setActive();
+    }
+
+  } );
+
+  panel.open();
+}
+
+function activateAction( action ) {
+
+  const clip = action.getClip();
+  const settings = baseActions[ clip.name ];
+  setWeight( action, settings.weight );
+  action.play();
+
+}
+
+function prepareCrossFade( startAction, endAction, duration ) {
+
+  // If the current action is 'idle', execute the crossfade immediately;
+  // else wait until the current action has finished its current loop
+
+  if (! startAction || ! endAction ) {
+
+    executeCrossFade( startAction, endAction, duration );
+
+  } else {
+
+    synchronizeCrossFade( startAction, endAction, duration );
+
+  }
+
+  // Update control colors
+
+  if ( endAction ) {
+
+    const clip = endAction.getClip();
+    currentBaseAction = clip.name;
+
+  } else {
+
+    currentBaseAction = 'None';
+
+  }
+
+  crossFadeControls.forEach( function ( control ) {
+
+    const name = control.property;
+
+    if ( name === currentBaseAction ) {
+
+      control.setActive();
+
+    } else {
+
+      control.setInactive();
+
+    }
+
+  } );
+
+}
+
+function synchronizeCrossFade( startAction, endAction, duration ) {
+
+  mixer.addEventListener( 'loop', onLoopFinished );
+
+  function onLoopFinished( event ) {
+
+    if ( event.action === startAction ) {
+
+      mixer.removeEventListener( 'loop', onLoopFinished );
+
+      executeCrossFade( startAction, endAction, duration );
+
+    }
+
+  }
+
+}
+
+function executeCrossFade( startAction, endAction, duration ) {
+
+  // Not only the start action, but also the end action must get a weight of 1 before fading
+  // (concerning the start action this is already guaranteed in this place)
+
+  if ( endAction ) {
+
+    setWeight( endAction, 1 );
+    endAction.time = 0;
+
+    if ( startAction ) {
+
+      // Crossfade with warping
+
+      startAction.crossFadeTo( endAction, duration, true );
+
+    } else {
+
+      // Fade in
+
+      endAction.fadeIn( duration );
+
+    }
+
+  } else {
+
+    // Fade out
+
+    startAction.fadeOut( duration );
+
+  }
+
+}
+
+// This function is needed, since animationAction.crossFadeTo() disables its start action and sets
+// the start action's timeScale to ((start animation's duration) / (end animation's duration))
+
+function setWeight( action, weight ) {
+
+  action.enabled = true;
+  action.setEffectiveTimeScale( 1 );
+  action.setEffectiveWeight( weight );
+
+}
+
+
 function initGraphics() {
 
   container = document.getElementById( 'container' );
+  document.body.appendChild( container );
 
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 2000 );
 
@@ -142,7 +347,7 @@ function initGraphics() {
 
 
   window.addEventListener( 'resize', onWindowResize );
-
+  document.addEventListener( 'mousemove', onDocumentMouseMove, false );
 }
 
 function initPhysics() {
@@ -161,6 +366,40 @@ function initPhysics() {
   transformAux1 = new Ammo.btTransform();
   softBodyHelpers = new Ammo.btSoftBodyHelpers();
 
+}
+
+function initName(){
+  
+  function loadModel() {
+
+    object.traverse( function ( child ) {
+
+      if ( child.isMesh ) child.material.map = texture;
+
+    } );
+    
+    const shape = new Ammo.btBoxShape( new Ammo.btVector3(  2, 0.1, 0.4 ) );
+    shape.setMargin( 0.05 );
+
+    pos.set( 0, 10, 1 );
+    quat.set( 0, 0, 0, 1 );
+    createRigidBody( object, shape, 15, pos, quat );
+  }
+
+  const manager = new THREE.LoadingManager( loadModel );
+
+  // texture
+
+  const texture = textureLoader.load( 'colors.png' );
+
+  // model
+
+  const loader = new OBJLoader( manager );
+  loader.load( 'DAVID.obj', function ( obj ) {
+
+    object = obj;
+
+  });
 }
 
 function createObjects() {
@@ -191,13 +430,6 @@ function createObjects() {
   const boxGeometry = new THREE.BoxGeometry( 1, 1, 5, 4, 4, 20 );
   boxGeometry.translate( - 3, 3, 0 );
   createSoftVolume( boxGeometry, volumeMass, 120 );
-
-  // Ramp
-  //pos.set( 3, 1, 0 );
-  //quat.setFromAxisAngle( new THREE.Vector3( 0, 0, 1 ), 30 * Math.PI / 180 );
-  //const obstacle = createParalellepiped( 10, 1, 4, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0x606060 } ) );
-  //obstacle.castShadow = true;
-  //obstacle.receiveShadow = true;
 
 }
 
@@ -365,11 +597,20 @@ function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
 
 }
 
+function onDocumentMouseMove( event ) {
+
+	mouseCoords.set(
+    ( event.clientX / window.innerWidth ) * 2 - 1,
+    - ( event.clientY / window.innerHeight ) * 2 + 1
+  );
+
+}
+
 function initInput() {
 
   window.addEventListener( 'pointerdown', function ( event ) {
 
-    if ( ! clickRequest ) {
+    if (enableRaycasting && ! clickRequest ) {
 
       mouseCoords.set(
         ( event.clientX / window.innerWidth ) * 2 - 1,
@@ -384,32 +625,36 @@ function initInput() {
 
 }
 
+
 function processClick() {
 
   if ( clickRequest ) {
 
-    raycaster.setFromCamera( mouseCoords, camera );
+    if(enableRaycasting){
+      raycaster.setFromCamera( mouseCoords, camera );
 
-    // Creates a ball
-    const ballMass = 3;
-    const ballRadius = 0.4;
+      // Creates a ball
+      const ballMass = 3;
+      const ballRadius = 0.3;
 
-    const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 18, 16 ), ballMaterial );
-    ball.castShadow = true;
-    ball.receiveShadow = true;
-    const ballShape = new Ammo.btSphereShape( ballRadius );
-    ballShape.setMargin( margin );
-    pos.copy( raycaster.ray.direction );
-    pos.add( raycaster.ray.origin );
-    quat.set( 0, 0, 0, 1 );
-    const ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
-    ballBody.setFriction( 0.5 );
+      const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 18, 16 ), ballMaterial );
+      ball.castShadow = true;
+      ball.receiveShadow = true;
+      const ballShape = new Ammo.btSphereShape( ballRadius );
+      ballShape.setMargin( margin );
+      pos.copy( raycaster.ray.direction );
+      pos.add( raycaster.ray.origin );
+      quat.set( 0, 0, 0, 1 );
+      const ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
+      ballBody.setFriction( 0.5 );
 
-    pos.copy( raycaster.ray.direction );
-    pos.multiplyScalar( 14 );
-    ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+      pos.copy( raycaster.ray.direction );
+      pos.multiplyScalar( 14 );
+      ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+    }
 
     clickRequest = false;
+
 
   }
 
@@ -427,7 +672,6 @@ function onWindowResize() {
 function animate() {
 
   requestAnimationFrame( animate );
-
   render();
   stats.update();
 
@@ -436,6 +680,20 @@ function animate() {
 function render() {
 
   const deltaTime = clock.getDelta();
+
+  for ( let i = 0; i !== numAnimations; ++ i ) {
+
+    const clip = animations[ i ];
+    const settings = baseActions[ clip.name ];
+    const action = mixer.clipAction( clip ).play()
+    settings.weight = action.getEffectiveWeight();
+
+  }
+
+
+  // Update the animation mixer, the stats panel, and render this frame
+
+  mixer.update( deltaTime );
 
   updatePhysics( deltaTime );
 
