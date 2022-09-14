@@ -29,6 +29,16 @@ let transformAux1;
 let softBodyHelpers;
 let object;
 
+// Animation variables
+let model, mixer;
+const animations = [];
+const crossFadeControls = [];
+let currentBaseAction = 'Walk';
+const baseActions = {
+  Walk: { weight: 1 }
+};
+let panelSettings;
+
 Ammo().then( function ( AmmoLib ) {
 
   Ammo = AmmoLib;
@@ -54,76 +64,53 @@ function init() {
 
 }
 
-let model, skeleton, mixer;
-var enableRaycasting = true;
-
-const crossFadeControls = [];
-
-let currentBaseAction = 'Walk';
-const baseActions = {
-  Walk: { weight: 1 }
-};
-let panelSettings, numAnimations, animations = [];
-
 function initWalkingBoy(){
 
-
   const loader = new GLTFLoader();
-    loader.load( 'WalkingBoy.glb', function ( gltf ) {
+  loader.load( 'WalkingBoy.glb', function ( gltf ) {
 
-      model = gltf.scene;
+    model = gltf.scene;
+    model.scale.multiplyScalar(1.2 / 2);
+    
+    gltf.animations.forEach(function ( animation ) {
 
-      var bbox = new THREE.Box3().setFromObject(model);
-      var cent = bbox.getCenter(new THREE.Vector3());
-      var size = bbox.getSize(new THREE.Vector3());
+      animations.push(animation);
+  
+    });
 
-      model.traverse( function ( object ) {
+    pos.set( 0, 0, 2 );
+    quat.set( 0, 0, 0, 1 );
 
-        if ( object.isMesh ) {
-          object.castShadow = true; 
-        }
-      } );
+    loadModel(model, pos, quat, 0);
 
-      model.scale.multiplyScalar(1.0 / 2);
+    createAnimations();
+  } );
 
-      skeleton = new THREE.SkeletonHelper( model );
-      skeleton.visible = false;
-      scene.add( skeleton );
+  createPanel();
+}
 
-      const shape = new Ammo.btBoxShape( new Ammo.btVector3(  0.2, 0, 0.2 ) );
-      shape.setMargin( 0.1 );
+function createAnimations(){
+  
+  mixer = new THREE.AnimationMixer( model );
 
-      pos.set( 0, 0, 2 );
-      quat.set( 0, 0, 0, 1 );
-      createRigidBody( model, shape, 15, pos, quat );
+  for ( let i = 0; i !== animations.length; ++ i ) {
 
-      animations = gltf.animations;
-      mixer = new THREE.AnimationMixer( model );
+    let clip = animations[ i ];
+    const name = clip.name;
 
-      numAnimations = animations.length;
+    if ( baseActions[ name ] ) {
 
-      for ( let i = 0; i !== numAnimations; ++ i ) {
+      const action = mixer.clipAction( clip ).play();
+      activateAction( action );
+      baseActions[ name ].action = action;
+    } 
 
-        let clip = animations[ i ];
-        const name = clip.name;
-
-        if ( baseActions[ name ] ) {
-
-          const action = mixer.clipAction( clip ).play();
-          activateAction( action );
-          baseActions[ name ].action = action;
-        } 
-
-      }
-
-      createPanel();
-
-    } );
+  }
 }
 
 function createPanel() {
 
-  const panel = new GUI( { width: 500 } );
+  const panel = new GUI( { width: 300 } );
 
   panelSettings = {};
 
@@ -308,7 +295,7 @@ function initGraphics() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xbfd1e5 );
 
-  camera.position.set( 0, 1, 6 );
+  camera.position.set( 0, 1, 7 );
 
   renderer = new THREE.WebGLRenderer();
   renderer.setPixelRatio( window.devicePixelRatio );
@@ -370,71 +357,73 @@ function initPhysics() {
 
 }
 
-function initName(){
-  
-  function loadModel() {
+function loadModel(object, pos, quat, texture) {
 
-    let triangle_mesh = new Ammo.btTriangleMesh();
+  let triangle_mesh = new Ammo.btTriangleMesh();
 
-    object.traverse( function ( child ) {
+  object.traverse( function ( child ) {
 
-      if ( child.isMesh ){
+    if ( child.isMesh ){
+
+      if(texture){
         child.material.map = texture;
-
-        let verticesPos = child.geometry.getAttribute('position').array;
-        let triangles = [];
-        for(let i = 0; i < verticesPos.length; i+=3){
-          triangles.push({
-            x:verticesPos[i],
-            y:verticesPos[i+1],
-            z:verticesPos[i+2]
-          })
-        }
-
-        let vecA = new Ammo.btVector3(0,0,0);
-        let vecB = new Ammo.btVector3(0,0,0);
-        let vecC = new Ammo.btVector3(0,0,0);
-
-        for(let i=0; i<triangles.length - 3; i+= 3){
-          vecA.setX(triangles[i].x);
-          vecA.setY(triangles[i].y);
-          vecA.setZ(triangles[i].z);
-
-          vecB.setX(triangles[i+1].x);
-          vecB.setY(triangles[i+1].y);
-          vecB.setZ(triangles[i+1].z);
-
-          vecC.setX(triangles[i+2].x);
-          vecC.setY(triangles[i+2].y);
-          vecC.setZ(triangles[i+2].z);
-
-          triangle_mesh.addTriangle(vecA, vecB, vecC, true);
-        }
-
       }
-    } );
-    
-    const shape = new Ammo.btConvexTriangleMeshShape(triangle_mesh);
-    shape.setMargin( 0.05 );
 
-    pos.set( 0, 10, 0 );
-    quat.set( 0, 0, 0, 1 );
-    createRigidBody( object, shape, 15, pos, quat );
-  }
+      let verticesPos = child.geometry.getAttribute('position').array;
+      let triangles = [];
+      for(let i = 0; i < verticesPos.length; i+=3){
+        triangles.push({
+          x:verticesPos[i],
+          y:verticesPos[i+1],
+          z:verticesPos[i+2]
+        })
+      }
 
-  const manager = new THREE.LoadingManager( loadModel );
+      let vecA = new Ammo.btVector3(0,0,0);
+      let vecB = new Ammo.btVector3(0,0,0);
+      let vecC = new Ammo.btVector3(0,0,0);
 
-  // texture
+      for(let i=0; i<triangles.length - 3; i+= 3){
+        vecA.setX(triangles[i].x);
+        vecA.setY(triangles[i].y);
+        vecA.setZ(triangles[i].z);
 
-  const texture = textureLoader.load( 'colors.png' );
+        vecB.setX(triangles[i+1].x);
+        vecB.setY(triangles[i+1].y);
+        vecB.setZ(triangles[i+1].z);
+
+        vecC.setX(triangles[i+2].x);
+        vecC.setY(triangles[i+2].y);
+        vecC.setZ(triangles[i+2].z);
+
+        triangle_mesh.addTriangle(vecA, vecB, vecC, true);
+      }
+
+    }
+  });
+
+  const shape = new Ammo.btConvexTriangleMeshShape(triangle_mesh);
+  const volumeMass = 15;
+  shape.setMargin( margin );
+
+  createRigidBody( object, shape, volumeMass, pos, quat );
+}
+
+function initName(){
+
+  const manager = new THREE.LoadingManager();
 
   // model
 
   const loader = new OBJLoader( manager );
   loader.load( 'DAVID.obj', function ( obj ) {
 
-    object = obj;
+    pos.set( 0, 10, 0 );
+    quat.set( 0, 0, 0, 1 );
 
+    textureLoader.load('colors.png', function (texture) {
+      loadModel(obj, pos, quat, texture);
+    });
   });
 }
 
@@ -646,7 +635,7 @@ function initInput() {
 
   window.addEventListener( 'pointerdown', function ( event ) {
 
-    if (enableRaycasting && ! clickRequest ) {
+    if (! clickRequest ) {
 
       mouseCoords.set(
         ( event.clientX / window.innerWidth ) * 2 - 1,
@@ -666,34 +655,29 @@ function processClick() {
 
   if ( clickRequest ) {
 
-    if(enableRaycasting){
-      raycaster.setFromCamera( mouseCoords, camera );
+    raycaster.setFromCamera( mouseCoords, camera );
 
-      // Creates a ball
-      const ballMass = 3;
-      const ballRadius = 0.1;
+    // Creates a ball
+    const ballMass = 3;
+    const ballRadius = 0.4;
 
-      const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 18, 16 ), ballMaterial );
-      ball.castShadow = true;
-      ball.receiveShadow = true;
-      const ballShape = new Ammo.btSphereShape( ballRadius );
-      ballShape.setMargin( margin );
-      pos.copy( raycaster.ray.direction );
-      pos.add( raycaster.ray.origin );
-      quat.set( 0, 0, 0, 1 );
-      const ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
-      ballBody.setFriction( 1 );
+    const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 18, 16 ), ballMaterial );
+    ball.castShadow = true;
+    ball.receiveShadow = true;
+    const ballShape = new Ammo.btSphereShape( ballRadius );
+    ballShape.setMargin( margin );
+    pos.copy( raycaster.ray.direction );
+    pos.add( raycaster.ray.origin );
+    quat.set( 0, 0, 0, 1 );
+    const ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
+    ballBody.setFriction( 1 );
 
-      pos.copy( raycaster.ray.direction );
-      pos.multiplyScalar( 14 );
-      ballBody.setLinearVelocity( new Ammo.btVector3( 1.5*pos.x, 1.5*pos.y, 1.5*pos.z ) );
-    }
+    pos.copy( raycaster.ray.direction );
+    pos.multiplyScalar( 14 );
+    ballBody.setLinearVelocity( new Ammo.btVector3( 1.5*pos.x, 1.5*pos.y, 1.5*pos.z ) );
 
     clickRequest = false;
-
-
   }
-
 }
 
 function onWindowResize() {
@@ -717,10 +701,11 @@ function render() {
 
   const deltaTime = clock.getDelta();
 
-  for ( let i = 0; i !== numAnimations; ++ i ) {
+  for ( let i = 0; i !== animations.length; ++ i ) {
 
     const clip = animations[ i ];
-    const settings = baseActions[ clip.name ];
+    const name = clip.name;
+    const settings = baseActions[ name ];
     const action = mixer.clipAction( clip ).play()
     settings.weight = action.getEffectiveWeight();
 
@@ -729,7 +714,9 @@ function render() {
 
   // Update the animation mixer, the stats panel, and render this frame
 
-  mixer.update( deltaTime );
+  if(mixer){
+    mixer.update( deltaTime );
+  }
 
   updatePhysics( deltaTime );
 
