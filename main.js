@@ -70,7 +70,7 @@ function initWalkingBoy(){
   loader.load( 'WalkingBoy.glb', function ( gltf ) {
 
     model = gltf.scene;
-    model.scale.multiplyScalar(1.2 / 2);
+    model.scale.multiplyScalar(1.4 / 2);
     
     gltf.animations.forEach(function ( animation ) {
 
@@ -81,7 +81,8 @@ function initWalkingBoy(){
     pos.set( 0, 0, 2 );
     quat.set( 0, 0, 0, 1 );
 
-    loadModel(model, pos, quat, 0);
+    const volumeMass = 300;
+    loadModel(model, pos, quat, volumeMass, 0);
 
     createAnimations();
   } );
@@ -357,7 +358,7 @@ function initPhysics() {
 
 }
 
-function loadModel(object, pos, quat, texture) {
+function loadModel(object, pos, quat, volumeMass, texture) {
 
   let triangle_mesh = new Ammo.btTriangleMesh();
 
@@ -365,8 +366,15 @@ function loadModel(object, pos, quat, texture) {
 
     if ( child.isMesh ){
 
+      child.castShadow = true;
+      child.receiveShadow = true;
+
       if(texture){
         child.material.map = texture;
+        child.material.needsUpdate = true;
+      }
+      else{
+        child.material = new THREE.MeshPhongMaterial( { color: 0x5D6D7E } );
       }
 
       let verticesPos = child.geometry.getAttribute('position').array;
@@ -403,7 +411,6 @@ function loadModel(object, pos, quat, texture) {
   });
 
   const shape = new Ammo.btConvexTriangleMeshShape(triangle_mesh);
-  const volumeMass = 15;
   shape.setMargin( margin );
 
   createRigidBody( object, shape, volumeMass, pos, quat );
@@ -422,7 +429,8 @@ function initName(){
     quat.set( 0, 0, 0, 1 );
 
     textureLoader.load('colors.png', function (texture) {
-      loadModel(obj, pos, quat, texture);
+      const volumeMass = 15;
+      loadModel(obj, pos, quat, volumeMass, texture);
     });
   });
 }
