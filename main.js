@@ -72,7 +72,10 @@ function initWalkingBoy(){
     loader.load( 'WalkingBoy.glb', function ( gltf ) {
 
       model = gltf.scene;
-      scene.add( model );
+
+      var bbox = new THREE.Box3().setFromObject(model);
+      var cent = bbox.getCenter(new THREE.Vector3());
+      var size = bbox.getSize(new THREE.Vector3());
 
       model.traverse( function ( object ) {
 
@@ -81,6 +84,8 @@ function initWalkingBoy(){
         }
       } );
 
+      model.scale.multiplyScalar(1.0 / 2);
+
       skeleton = new THREE.SkeletonHelper( model );
       skeleton.visible = false;
       scene.add( skeleton );
@@ -88,7 +93,7 @@ function initWalkingBoy(){
       const shape = new Ammo.btBoxShape( new Ammo.btVector3(  0.2, 0, 0.2 ) );
       shape.setMargin( 0.1 );
 
-      pos.set( 0, 0, -1 );
+      pos.set( 0, 0, 2 );
       quat.set( 0, 0, 0, 1 );
       createRigidBody( model, shape, 15, pos, quat );
 
@@ -284,9 +289,6 @@ function executeCrossFade( startAction, endAction, duration ) {
 
 }
 
-// This function is needed, since animationAction.crossFadeTo() disables its start action and sets
-// the start action's timeScale to ((start animation's duration) / (end animation's duration))
-
 function setWeight( action, weight ) {
 
   action.enabled = true;
@@ -301,12 +303,12 @@ function initGraphics() {
   container = document.getElementById( 'container' );
   document.body.appendChild( container );
 
-  camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 2000 );
+  camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.2, 2000 );
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xbfd1e5 );
 
-  camera.position.set( 0, 5, 7 );
+  camera.position.set( 0, 1, 6 );
 
   renderer = new THREE.WebGLRenderer();
   renderer.setPixelRatio( window.devicePixelRatio );
@@ -315,7 +317,7 @@ function initGraphics() {
   container.appendChild( renderer.domElement );
 
   controls = new OrbitControls( camera, renderer.domElement );
-  controls.target.set( 0, 2, 0 );
+  controls.target.set( 0, 0.5, 0 );
   controls.update();
 
   textureLoader = new THREE.TextureLoader();
@@ -372,16 +374,50 @@ function initName(){
   
   function loadModel() {
 
+    let triangle_mesh = new Ammo.btTriangleMesh();
+
     object.traverse( function ( child ) {
 
-      if ( child.isMesh ) child.material.map = texture;
+      if ( child.isMesh ){
+        child.material.map = texture;
 
+        let verticesPos = child.geometry.getAttribute('position').array;
+        let triangles = [];
+        for(let i = 0; i < verticesPos.length; i+=3){
+          triangles.push({
+            x:verticesPos[i],
+            y:verticesPos[i+1],
+            z:verticesPos[i+2]
+          })
+        }
+
+        let vecA = new Ammo.btVector3(0,0,0);
+        let vecB = new Ammo.btVector3(0,0,0);
+        let vecC = new Ammo.btVector3(0,0,0);
+
+        for(let i=0; i<triangles.length - 3; i+= 3){
+          vecA.setX(triangles[i].x);
+          vecA.setY(triangles[i].y);
+          vecA.setZ(triangles[i].z);
+
+          vecB.setX(triangles[i+1].x);
+          vecB.setY(triangles[i+1].y);
+          vecB.setZ(triangles[i+1].z);
+
+          vecC.setX(triangles[i+2].x);
+          vecC.setY(triangles[i+2].y);
+          vecC.setZ(triangles[i+2].z);
+
+          triangle_mesh.addTriangle(vecA, vecB, vecC, true);
+        }
+
+      }
     } );
     
-    const shape = new Ammo.btBoxShape( new Ammo.btVector3(  2, 0.1, 0.4 ) );
+    const shape = new Ammo.btConvexTriangleMeshShape(triangle_mesh);
     shape.setMargin( 0.05 );
 
-    pos.set( 0, 10, 1 );
+    pos.set( 0, 10, 0 );
     quat.set( 0, 0, 0, 1 );
     createRigidBody( object, shape, 15, pos, quat );
   }
@@ -635,7 +671,7 @@ function processClick() {
 
       // Creates a ball
       const ballMass = 3;
-      const ballRadius = 0.3;
+      const ballRadius = 0.1;
 
       const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 18, 16 ), ballMaterial );
       ball.castShadow = true;
@@ -646,11 +682,11 @@ function processClick() {
       pos.add( raycaster.ray.origin );
       quat.set( 0, 0, 0, 1 );
       const ballBody = createRigidBody( ball, ballShape, ballMass, pos, quat );
-      ballBody.setFriction( 0.5 );
+      ballBody.setFriction( 1 );
 
       pos.copy( raycaster.ray.direction );
       pos.multiplyScalar( 14 );
-      ballBody.setLinearVelocity( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+      ballBody.setLinearVelocity( new Ammo.btVector3( 1.5*pos.x, 1.5*pos.y, 1.5*pos.z ) );
     }
 
     clickRequest = false;
