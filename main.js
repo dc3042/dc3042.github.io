@@ -425,11 +425,11 @@ function initName(){
   const loader = new OBJLoader( manager );
   loader.load( 'DAVID.obj', function ( obj ) {
 
-    pos.set( 0, 10, 0 );
+    pos.set( 0, 7, 0 );
     quat.set( 0, 0, 0, 1 );
 
     textureLoader.load('colors.png', function (texture) {
-      const volumeMass = 15;
+      const volumeMass = 35;
       loadModel(obj, pos, quat, volumeMass, texture);
     });
   });
@@ -457,11 +457,11 @@ function createObjects() {
   const volumeMass = 15;
 
   const sphereGeometry = new THREE.SphereGeometry( 1, 40, 25 );
-  sphereGeometry.translate( 3, 3, 0 );
+  sphereGeometry.translate( 3.5, 3, 0 );
   createSoftVolume( sphereGeometry, volumeMass, 250 );
 
   const boxGeometry = new THREE.BoxGeometry( 1, 1, 5, 4, 4, 20 );
-  boxGeometry.translate( - 3, 3, 0 );
+  boxGeometry.translate( - 3.5, 3, 0 );
   createSoftVolume( boxGeometry, volumeMass, 120 );
 
 }
