@@ -25,14 +25,15 @@ class CharacterShooter {
 
     this._Init_Physics();
 
-    this._LoadPlane();
-
     this._entityManager = new entity_manager.EntityManager();
+
+    this._LoadAnimatedModel();
+
+    this._LoadPlane();
 
     this._LoadSoftBodies();
 
     this._previousRAF = null;
-    this._LoadAnimatedModel();
 
     this._RAF();
   }

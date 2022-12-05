@@ -36,7 +36,7 @@ export const person_entity = (() => {
 
         Update(timeElapsed, input) {
             if (this._currentState) {
-            this._currentState.Update(timeElapsed, input);
+              this._currentState.Update(timeElapsed, input);
             }
         }
     };
@@ -204,9 +204,6 @@ export const person_entity = (() => {
           const _R = controlObject.quaternion.clone();
       
           const acc = this._acceleration.clone();
-          if (input._keys.space) {
-            acc.multiplyScalar(0.0);
-          }
       
           if (input._keys.forward) {
             velocity.z += acc.z * timeInSeconds;

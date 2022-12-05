@@ -174,6 +174,7 @@ export const person_state = (() => {
         }
       
         Update(_, input) {
+
           if (input._keys.forward) {
             this._parent.SetState('walk');
           } else if (input._keys.backward){
