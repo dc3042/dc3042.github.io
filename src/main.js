@@ -331,18 +331,7 @@ class CharacterShooter {
 
     const player = new entity.Entity();
     player.AddComponent(new person_input.BasicCharacterControllerInput(params));
-    const input = player.GetComponent('BasicCharacterControllerInput');
-          
-          console.log("input");
-          console.log(input);
-          
-
     player.AddComponent(new person_entity.BasicCharacterController(params));
-    const controller = player.GetComponent('BasicCharacterController');
-          
-          console.log("controller");
-          console.log(controller);
-
     player.AddComponent(new shoot_controller.ShootController(params));
     player.AddComponent(new physics_controller.PhysicsController(params));
     this._entityManager.Add(player, 'player');
