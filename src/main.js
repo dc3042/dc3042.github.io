@@ -1,737 +1,17 @@
 import './style.css';
+import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import * as THREE from 'three';
+import {entity_manager} from './entity_manager.js';
+import {entity} from './entity.js';
+import {person_entity} from './person_entity.js'
+import {person_input} from './person_input.js';
+import {shoot_controller} from './shoot_controller.js';
+import {physics_controller} from './physics_controller.js';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
-import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-class EntityManager {
-  constructor() {
-    this._ids = 0;
-    this._entitiesMap = {};
-    this._entities = [];
-  }
-
-  _GenerateName() {
-    this._ids += 1;
-
-    return '__name__' + this._ids;
-  }
-
-  Get(n) {
-    return this._entitiesMap[n];
-  }
-
-  Filter(cb) {
-    return this._entities.filter(cb);
-  }
-
-  Add(e, n) {
-    if (!n) {
-      n = this._GenerateName();
-    }
-
-    this._entitiesMap[n] = e;
-    this._entities.push(e);
-
-    e.SetParent(this);
-    e.SetName(n);
-  }
-
-  SetActive(e, b) {
-    const i = this._entities.indexOf(e);
-    if (i < 0) {
-      return;
-    }
-
-    this._entities.splice(i, 1);
-  }
-
-  Update(timeElapsed) {
-    for (let e of this._entities) {
-      e.Update(timeElapsed);
-    }
-  }
-}
-
-class Entity {
-  constructor() {
-    this._name = null;
-    this._components = {};
-
-    this._position = new THREE.Vector3();
-    this._rotation = new THREE.Quaternion();
-    this._handlers = {};
-    this._parent = null;
-  }
-
-  _RegisterHandler(n, h) {
-    if (!(n in this._handlers)) {
-      this._handlers[n] = [];
-    }
-    this._handlers[n].push(h);
-  }
-
-  SetParent(p) {
-    this._parent = p;
-  }
-
-  SetName(n) {
-    this._name = n;
-  }
-
-  get Name() {
-    return this._name;
-  }
-
-  SetActive(b) {
-    this._parent.SetActive(this, b);
-  }
-
-  AddComponent(c) {
-    c.SetParent(this);
-    this._components[c.constructor.name] = c;
-
-    c.InitComponent();
-  }
-
-  GetComponent(n) {
-    return this._components[n];
-  }
-
-  FindEntity(n) {
-    return this._parent.Get(n);
-  }
-
-  Broadcast(msg) {
-    if (!(msg.topic in this._handlers)) {
-      return;
-    }
-
-    for (let curHandler of this._handlers[msg.topic]) {
-      curHandler(msg);
-    }
-  }
-
-  SetPosition(p) {
-    this._position.copy(p);
-    this.Broadcast({
-        topic: 'update.position',
-        value: this._position,
-    });
-  }
-
-  SetQuaternion(r) {
-    this._rotation.copy(r);
-    this.Broadcast({
-        topic: 'update.rotation',
-        value: this._rotation,
-    });
-  }
-
-  Update(timeElapsed) {
-    for (let k in this._components) {
-      this._components[k].Update(timeElapsed);
-    }
-  }
-};
-
-class Component {
-  constructor() {
-    this._parent = null;
-  }
-
-  SetParent(p) {
-    this._parent = p;
-  }
-
-  InitComponent() {}
-
-  GetComponent(n) {
-    return this._parent.GetComponent(n);
-  }
-
-  FindEntity(n) {
-    return this._parent.FindEntity(n);
-  }
-
-  Broadcast(m) {
-    this._parent.Broadcast(m);
-  }
-
-  Update(_) {}
-
-  _RegisterHandler(n, h) {
-    this._parent._RegisterHandler(n, h);
-  }
-};
-
-class State {
-  constructor(parent) {
-      this._parent = parent;
-  }
-  
-  Enter() {}
-  Exit() {}
-  Update() {}
-};
-
-class WalkState extends State {
-  constructor(parent) {
-    super(parent);
-  }
-
-  get Name() {
-    return 'walk';
-  }
-
-  Enter(prevState) {
-    const curAction = this._parent._proxy._animations['walk'].action;
-    if (prevState) {
-      const prevAction = this._parent._proxy._animations[prevState.Name].action;
-
-      curAction.enabled = true;
-      curAction.time = 0.0;
-      curAction.setEffectiveTimeScale(1.0);
-      curAction.setEffectiveWeight(1.0);
-      curAction.crossFadeFrom(prevAction, 0.5, true);
-      curAction.play();
-    } else {
-      curAction.play();
-    }
-  }
-
-  Exit() {
-  }
-
-  Update(timeElapsed, input) {
-    if (input._keys.forward ) {
-      return;
-    } else if (input._keys.shift){
-      this._parent.SetState('shoot');
-    }
-
-    this._parent.SetState('idle');
-  }
-};
-
-class WalkBackState extends State {
-  constructor(parent) {
-    super(parent);
-  }
-
-  get Name() {
-    return 'walk_back';
-  }
-
-  Enter(prevState) {
-    const curAction = this._parent._proxy._animations['walk_back'].action;
-    if (prevState) {
-      const prevAction = this._parent._proxy._animations[prevState.Name].action;
-
-      curAction.enabled = true;
-      curAction.time = 0.0;
-      curAction.setEffectiveTimeScale(1.0);
-      curAction.setEffectiveWeight(1.0);
-      curAction.crossFadeFrom(prevAction, 0.5, true);
-      curAction.play();
-    } else {
-      curAction.play();
-    }
-  }
-
-  Exit() {
-  }
-
-  Update(timeElapsed, input) {
-    if (input._keys.backward) {
-      return;
-    } else if (input._keys.shift){
-      this._parent.SetState('shoot');
-    }
-
-    this._parent.SetState('idle');
-  }
-};
-
-class ShootState extends State {
-  constructor(parent) {
-      super(parent);
-      this._action = null;
-  
-      this._FinishedCallback = () => { 
-        this._Finished();
-      }
-  }
-  
-  get Name() {
-      return 'shoot';
-  }
-  
-  Enter(prevState) {
-
-      this._action = this._parent._proxy._animations['shoot'].action;
-      const mixer = this._action.getMixer();
-      mixer.addEventListener('finished', this._FinishedCallback);
-  
-      if (prevState) {
-          const prevAction = this._parent._proxy._animations[prevState.Name].action;
-      
-          //console.log(curAction._clip.duration);
-          this._action.reset();  
-          this._action.setLoop(THREE.LoopOnce, 1);
-          this._action.clampWhenFinished = true;
-          this._action.crossFadeFrom(prevAction, 0.2, true);
-          this._action.play();
-      } else {
-        this._action.play();
-      }
-  
-  }
-  
-  _Finished() {
-      this._Cleanup();
-      this._parent.SetState('idle');
-  }
-  
-  _Cleanup() {
-      const action = this._parent._proxy._animations['shoot'].action;
-      if(this._action){
-        this._action.getMixer().removeEventListener('finished', this._FinishedCallback);
-      }
-  }
-  
-  Exit() {
-      this._Cleanup();
-  }
-  
-  Update(_) {
-  }
-};
-
-class IdleState extends State {
-  constructor(parent) {
-    super(parent);
-  }
-
-  get Name() {
-    return 'idle';
-  }
-
-  Enter(prevState) {
-    const idleAction = this._parent._proxy._animations['idle'].action;
-    if (prevState) {
-      const prevAction = this._parent._proxy._animations[prevState.Name].action;
-      idleAction.time = 0.0;
-      idleAction.enabled = true;
-      idleAction.setEffectiveTimeScale(1.0);
-      idleAction.setEffectiveWeight(1.0);
-      idleAction.crossFadeFrom(prevAction, 0.5, true);
-      idleAction.play();
-    } else {
-      idleAction.play();
-    }
-  }
-
-  Exit() {
-  }
-
-  Update(_, input) {
-    if (input._keys.forward) {
-      this._parent.SetState('walk');
-    } else if (input._keys.backward){
-      this._parent.SetState('walk_back');
-    } else if (input._keys.shift){
-      this._parent.SetState('shoot');
-    }
-  }
-};
-
-class FiniteStateMachine {
-  constructor() {
-      this._states = {};
-      this._currentState = null;
-  }
-
-  _AddState(name, type) {
-      this._states[name] = type;
-  }
-
-  SetState(name) {
-      const prevState = this._currentState;
-      
-      if (prevState) {
-      if (prevState.Name == name) {
-          return;
-      }
-      prevState.Exit();
-      }
-
-      const state = new this._states[name](this);
-
-      this._currentState = state;
-      state.Enter(prevState);
-  }
-
-  Update(timeElapsed, input) {
-      if (this._currentState) {
-      this._currentState.Update(timeElapsed, input);
-      }
-  }
-};
-
-class CharacterFSM extends FiniteStateMachine {
-  constructor(proxy) {
-    super();
-    this._proxy = proxy;
-    this._Init();
-  }
-
-  _Init() {
-    this._AddState('idle', IdleState);
-    this._AddState('walk', WalkState);
-    this._AddState('walk_back', WalkBackState);
-    this._AddState('shoot', ShootState);
-  }
-};
-
-class BasicCharacterControllerProxy {
-  constructor(animations) {
-    this._animations = animations;
-  }
-
-  get animations() {
-    return this._animations;
-  }
-};
-
-
-class BasicCharacterController extends Component {
-  constructor(params) {
-    super();
-    this._Init(params);
-  }
-
-  _Init(params) {
-    this._params = params;
-    this._decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
-    this._acceleration = new THREE.Vector3(1, 0.1, 5);
-    this._velocity = new THREE.Vector3(0, 0, 0);
-
-    this._animations = {};
-    this._stateMachine = new CharacterFSM(
-        new BasicCharacterControllerProxy(this._animations));
-  
-    this._target = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshPhongMaterial({color: 0x30ab78}));
-    this._target.material.visible = false;
-
-    this._LoadCharacter();
-  }
-
-  get target() {
-    return this._target;
-  }
-
-
-  _LoadCharacter() {
-    const loader = new FBXLoader();
-    loader.load('./Y Bot.fbx', (fbx) => {
-      fbx.scale.setScalar(0.01);
-      this._target.attach(fbx);
-      
-      this._bones = {};
-
-      for(let b of fbx.children[1].skeleton.bones) {
-          this._bones[b.name] = b;
-      }
-
-      console.log(this._bones);
-
-      fbx.traverse(c => {
-        c.castShadow = true;
-        c.receiveShadow = true;
-        if(c.material && c.material.map){
-          c.material.map.encoding = THREE.sRGBEncoding;
-        }
-      });
-
-
-      this._mixer = new THREE.AnimationMixer(fbx);
-
-      this._manager = new THREE.LoadingManager();
-      this._manager.onLoad = () => {
-        this._stateMachine.SetState('idle');
-      };
-
-      const _OnLoad = (animName, anim) => {
-        const clip = anim.animations[0];
-        const action = this._mixer.clipAction(clip);
-  
-        this._animations[animName] = {
-          clip: clip,
-          action: action,
-        };
-      };
-
-      const loader = new FBXLoader(this._manager);
-      loader.load('Walking.fbx', (a) => { _OnLoad('walk', a); });
-      loader.load('HappyIdle.fbx', (a) => { _OnLoad('idle', a); });
-      loader.load('Walking Backwards.fbx',  (a) => { _OnLoad('walk_back', a); });
-      loader.load('Pistol Aim.fbx', (a) => { _OnLoad('shoot', a); });
-    });
-  }
-
-  Update(timeInSeconds) {
-    if (!this._stateMachine._currentState) {
-      return;
-    }
-
-    const input = this.GetComponent('BasicCharacterControllerInput');
-    this._stateMachine.Update(timeInSeconds, input);
-
-    if (this._mixer) {
-      this._mixer.update(timeInSeconds);
-    }
-
-    if (this._stateMachine._currentState._action) {
-      this.Broadcast({
-        topic: 'person.action',
-        action: this._stateMachine._currentState.Name,
-        time: this._stateMachine._currentState._action.time,
-      });
-    }
-
-    const currentState = this._stateMachine._currentState;
-    if (currentState.Name == 'shoot') {
-      return;
-    }
-
-    const velocity = this._velocity;
-    const frameDecceleration = new THREE.Vector3(
-        velocity.x * this._decceleration.x,
-        velocity.y * this._decceleration.y,
-        velocity.z * this._decceleration.z
-    );
-    frameDecceleration.multiplyScalar(timeInSeconds);
-    frameDecceleration.z = Math.sign(frameDecceleration.z) * Math.min(
-        Math.abs(frameDecceleration.z), Math.abs(velocity.z));
-
-    velocity.add(frameDecceleration);
-
-    const controlObject = this._target;
-    const _Q = new THREE.Quaternion();
-    const _A = new THREE.Vector3();
-    const _R = controlObject.quaternion.clone();
-
-    const acc = this._acceleration.clone();
-    if (input._keys.space) {
-      acc.multiplyScalar(0.0);
-    }
-
-    if (input._keys.forward) {
-      velocity.z += acc.z * timeInSeconds;
-    }
-    if (input._keys.backward) {
-      velocity.z -= acc.z * timeInSeconds;
-    }
-    if (input._keys.left) {
-      _A.set(0, 1, 0);
-      _Q.setFromAxisAngle(_A, 4.0 * Math.PI * timeInSeconds * this._acceleration.y);
-      _R.multiply(_Q);
-    }
-    if (input._keys.right) {
-      _A.set(0, 1, 0);
-      _Q.setFromAxisAngle(_A, 4.0 * -Math.PI * timeInSeconds * this._acceleration.y);
-      _R.multiply(_Q);
-    }
-
-    controlObject.quaternion.copy(_R);
-
-    const oldPosition = new THREE.Vector3();
-    oldPosition.copy(controlObject.position);
-
-    const forward = new THREE.Vector3(0, 0, 1);
-    forward.applyQuaternion(controlObject.quaternion);
-    forward.normalize();
-
-    const sideways = new THREE.Vector3(1, 0, 0);
-    sideways.applyQuaternion(controlObject.quaternion);
-    sideways.normalize();
-
-    sideways.multiplyScalar(velocity.x * timeInSeconds);
-    forward.multiplyScalar(velocity.z * timeInSeconds);
-
-    controlObject.position.add(forward);
-    controlObject.position.add(sideways);
-
-    const physicsBody = controlObject.userData.physicsBody;
-
-    const ms = physicsBody.getMotionState();
-
-    if(ms){
-
-
-      let ammoTmpPos = new Ammo.btVector3(controlObject.position.x, controlObject.position.y, controlObject.position.z);
-      let ammoTmpQuat = new Ammo.btQuaternion(controlObject.quaternion.x,controlObject.quaternion.y,controlObject.quaternion.z,controlObject.quaternion.w);
-
-      let transform = new Ammo.btTransform();
-      transform.setIdentity();
-      transform.setOrigin(ammoTmpPos);
-      transform.setRotation(ammoTmpQuat);
-
-
-      ms.setWorldTransform(transform);
-    }
-  }
-};
-
-class BasicCharacterControllerInput extends Component {
-  constructor(params) {
-    super();
-    this._params = params;
-    this._Init();
-  }
-
-  _Init() {
-    this._keys = {
-      forward: false,
-      backward: false,
-      left: false,
-      right: false,
-      space: false,
-      shift: false,
-    };
-    this._raycaster = new THREE.Raycaster();
-    document.addEventListener('keydown', (e) => this._onKeyDown(e), false);
-    document.addEventListener('keyup', (e) => this._onKeyUp(e), false);
-  }
-
-  _onKeyDown(event) {
-    switch (event.keyCode) {
-      case 87: // w
-        this._keys.forward = true;
-        break;
-      case 65: // a
-        this._keys.left = true;
-        break;
-      case 83: // s
-        this._keys.backward = true;
-        break;
-      case 68: // d
-        this._keys.right = true;
-        break;
-      case 32: // SPACE
-        this._keys.space = true;
-        break;
-      case 16: // SHIFT
-        this._keys.shift = true;
-        break;
-    }
-  }
-
-  _onKeyUp(event) {
-    switch(event.keyCode) {
-      case 87: // w
-        this._keys.forward = false;
-        break;
-      case 65: // a
-        this._keys.left = false;
-        break;
-      case 83: // s
-        this._keys.backward = false;
-        break;
-      case 68: // d
-        this._keys.right = false;
-        break;
-      case 32: // SPACE
-        this._keys.space = false;
-        break;
-      case 16: // SHIFT
-        this._keys.shift = false;
-        break;
-    }
-  }
-};
-
-class ShootController extends Component {
-  constructor(params) {
-    super();
-    this._params = params;
-    this._timeElapsed = 0.0;
-    this._action = null;
-  }
-
-  InitComponent() {
-    this._RegisterHandler('person.action', (m) => { this._OnAnimAction(m); });
-  }
-
-  _OnAnimAction(m) {
-
-      console.log("message");
-    if (this._action == null && m.action == 'shoot' ) {
-      console.log("shoot");
-      this._action = m.action;
-      this._timeElapsed = 0.0;
-    }
-
-    const oldTiming = this._timeElapsed;
-    this._timeElapsed = m.time;
-
-    if (oldTiming < this._params.timing && this._timeElapsed >= this._params.timing) {
-
-      console.log("shoot bullet");
-      const target = this.GetComponent('BasicCharacterController').target;
-      
-      const quat = target.quaternion;
-
-      const forward = new THREE.Vector3(0, 0, 1);
-      forward.applyQuaternion(quat);
-      forward.normalize();
-      forward.multiplyScalar(1);
-
-      const pos = new THREE.Vector3(target.position.x + forward.x, target.position.y + 0.6, target.position.z + forward.z);
-
-      // Creates a ball
-      const ballMass = 3;
-      const ballRadius = 0.4;
-  
-      const ball = new THREE.Mesh( new THREE.SphereGeometry( ballRadius, 18, 16 ), new THREE.MeshPhongMaterial( { color: 0x202020 } ) );
-      ball.castShadow = true;
-      ball.receiveShadow = true;
-      const ballShape = new Ammo.btSphereShape( ballRadius );
-      ballShape.setMargin( 0.05 );
-      
-      const localInertia = new Ammo.btVector3( 0, 0, 0 );
-      ballShape.calculateLocalInertia( ballMass, localInertia );
-
-      const transform = new Ammo.btTransform();
-      transform.setIdentity();
-      transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
-      transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
-      const motionState = new Ammo.btDefaultMotionState( transform );
-  
-      const rbInfo = new Ammo.btRigidBodyConstructionInfo( ballMass, motionState, ballShape, localInertia );
-      const ballBody = new Ammo.btRigidBody( rbInfo );
-
-      ballBody.setFriction( 1 );
-
-      ball.userData.physicsBody = ballBody;
-
-      this._params.scene.add(ball);
-      this._params.rigid_bodies.push( ball );
-      this._params.physics_world.addRigidBody( ballBody );
-
-      //console.log(forward);
-      ballBody.setLinearVelocity( new Ammo.btVector3( 10 * forward.x, 10 * forward.y, 10 * forward.z ) );      
-    }
-
-    else if(this._timeElapsed >= 3){
-      this._action = null;
-    }
-  }
-};
 
 class CharacterShooter {
   constructor() {
@@ -747,13 +27,16 @@ class CharacterShooter {
 
     this._LoadPlane();
 
-    this._entityManager = new EntityManager();
+    this._entityManager = new entity_manager.EntityManager();
 
     this._LoadSoftBodies();
 
     this._previousRAF = null;
     this._LoadAnimatedModel();
+
+    this._RAF();
   }
+
 
   _Init_Physics(){
 
@@ -858,7 +141,8 @@ class CharacterShooter {
 
     this._CreateRigidBody( plane, shape, 0, pos, quat );
 
-    /** 
+
+    /**
     const ball = new THREE.Mesh( new THREE.SphereGeometry( 0.5, 18, 16 ), new THREE.MeshPhongMaterial( { color: 0x202020 } ) );
     ball.castShadow = true;
     ball.receiveShadow = true;
@@ -1038,9 +322,6 @@ class CharacterShooter {
 
   _LoadAnimatedModel() {
 
-    const pos = new THREE.Vector3( 0, 1, 0 );
-    const quat = new THREE.Quaternion( 0, 0, 0, 1 );
-
     const params = {
       scene: this._scene,
       physics_world: this._physics_world,
@@ -1048,24 +329,23 @@ class CharacterShooter {
       timing: 0.5
     }
 
-    const player = new Entity();
-    player.AddComponent(new BasicCharacterControllerInput(params));
-    player.AddComponent(new BasicCharacterController(params));
-    player.AddComponent(new ShootController(params));
+    const player = new entity.Entity();
+    player.AddComponent(new person_input.BasicCharacterControllerInput(params));
+    const input = player.GetComponent('BasicCharacterControllerInput');
+          
+          console.log("input");
+          console.log(input);
+          
+
+    player.AddComponent(new person_entity.BasicCharacterController(params));
+    const controller = player.GetComponent('BasicCharacterController');
+          
+          console.log("controller");
+          console.log(controller);
+
+    player.AddComponent(new shoot_controller.ShootController(params));
+    player.AddComponent(new physics_controller.PhysicsController(params));
     this._entityManager.Add(player, 'player');
-
-    const target = player.GetComponent('BasicCharacterController').target;
-
-    let scale = new THREE.Vector3();
-    scale.copy(target.scale);
-
-    console.log("scale");
-    console.log(scale);
-
-    const shape = new Ammo.btBoxShape( new Ammo.btVector3( scale.x* 0.5, scale.y* 0.5, scale.z* 0.5 ) );
-    shape.setMargin( 0.05 );
-
-    this._CreateRigidBody(target, shape, 0, pos, quat);
 
   }
 
@@ -1086,7 +366,10 @@ class CharacterShooter {
       this._stats.update();
 
       this._previousRAF = t;
-      this._RAF();
+      
+      setTimeout(() => {
+        this._RAF();
+      }, 1);
     });
   }
 
@@ -1181,8 +464,6 @@ window.addEventListener('DOMContentLoaded', () => {
     Ammo = AmmoLib;
   
     _APP = new CharacterShooter();
-
-    _APP._RAF();
   
   } );
 });
