@@ -9,8 +9,7 @@ import {shoot_controller} from './shoot_controller.js';
 import {physics_controller} from './physics_controller.js';
 import {softBody_controller} from './softBody_controller.js';
 import {plane_controller} from './plane_controller.js';
-
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import {camera_controller} from './camera_controller.js';
 
 
 class CharacterShooter {
@@ -18,7 +17,7 @@ class CharacterShooter {
 
     this._entityManager = new entity_manager.EntityManager();
     this._previousRAF = null;
-    
+
     this._Initialize();
   }
 
@@ -50,7 +49,6 @@ class CharacterShooter {
     this._physics_world = new Ammo.btSoftRigidDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration, softBodySolver );
     this._physics_world.getWorldInfo().set_m_gravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
     
-    //this._physics_world = new Ammo.btDiscreteDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration);
     this._physics_world.setGravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
 
     this.softBodyHelpers = new Ammo.btSoftBodyHelpers();
@@ -109,11 +107,6 @@ class CharacterShooter {
     const far = 2000;
     this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     this._camera.position.set( 0, 1, 7 );
-
-    const controls = new OrbitControls(
-      this._camera, this._threejs.domElement);
-    controls.target.set(0, 0.5, 0);
-    controls.update();
 
     this._stats = new Stats();
     this._stats.domElement.style.position = 'absolute';
@@ -189,6 +182,14 @@ class CharacterShooter {
     player.AddComponent(new shoot_controller.ShootController(params));
     player.AddComponent(new physics_controller.PhysicsController(params));
     this._entityManager.Add(player, 'player');
+
+    const camera = new entity.Entity();
+    camera.AddComponent(
+        new camera_controller.ThirdPersonCamera({
+            camera: this._camera,
+            target: player,
+            domElement: this._threejs.domElement}));
+    this._entityManager.Add(camera, 'player-camera');
 
   }
 

@@ -100,8 +100,19 @@ export const person_controller = (() => {
           this._LoadCharacter();
         }
 
-        get target(){
-          return this._target;
+        InitComponent() {
+          this._RegisterHandler('update.position', (m) => { this._OnModelMovePosition(m); });
+          this._RegisterHandler('update.rotation', (m) => { this._OnModelMoveRotation(m); });
+        }
+
+        _OnModelMovePosition(m){
+        
+          this._target.position.copy(m.value);
+        }
+    
+        _OnModelMoveRotation(m){
+          
+          this._target.quaternion.copy(m.value);
         }
 
         _onKeyDown(event) {
@@ -221,8 +232,6 @@ export const person_controller = (() => {
           if (!this._stateMachine._currentState) {
             return;
           }
-      
-          const input = this.GetComponent('BasicCharacterControllerInput');
 
           this._stateMachine.Update(timeInSeconds, this._keys);
 
@@ -256,10 +265,11 @@ export const person_controller = (() => {
       
           velocity.add(frameDecceleration);
       
-          const controlObject = this._target;
           const _Q = new THREE.Quaternion();
           const _A = new THREE.Vector3();
-          const _R = controlObject.quaternion.clone();
+          
+          const rotation = this._target.quaternion.clone();
+          const poosition = this._target.position.clone();
       
           const acc = this._acceleration.clone();
       
@@ -269,38 +279,35 @@ export const person_controller = (() => {
           if (this._keys.backward) {
             velocity.z -= acc.z * timeInSeconds;
           }
-          if (this._keys.left) {
+          if (this._keys.left || this._keys.right) {
             _A.set(0, 1, 0);
-            _Q.setFromAxisAngle(_A, 4.0 * Math.PI * timeInSeconds * this._acceleration.y);
-            _R.multiply(_Q);
+            
+            let direction = this._keys.left ? 4 : -4;
+
+            if (velocity.z < 0){
+              direction *= -1;
+            }
+
+            _Q.setFromAxisAngle(_A,  direction * Math.PI * timeInSeconds * this._acceleration.y);
+            rotation.multiply(_Q);
           }
-          if (this._keys.right) {
-            _A.set(0, 1, 0);
-            _Q.setFromAxisAngle(_A, 4.0 * -Math.PI * timeInSeconds * this._acceleration.y);
-            _R.multiply(_Q);
-          }
-      
-          controlObject.quaternion.copy(_R);
-      
-          const oldPosition = new THREE.Vector3();
-          oldPosition.copy(controlObject.position);
-      
+          
           const forward = new THREE.Vector3(0, 0, 1);
-          forward.applyQuaternion(controlObject.quaternion);
+          forward.applyQuaternion(rotation);
           forward.normalize();
       
-          const sideways = new THREE.Vector3(1, 0, 0);
-          sideways.applyQuaternion(controlObject.quaternion);
+          const sideways = new THREE.Vector3(1, 0, 1);
+          sideways.applyQuaternion(rotation);
           sideways.normalize();
       
           sideways.multiplyScalar(velocity.x * timeInSeconds);
           forward.multiplyScalar(velocity.z * timeInSeconds);
       
-          controlObject.position.add(forward);
-          controlObject.position.add(sideways);
+          poosition.add(forward);
+          poosition.add(sideways);
 
-          this._parent.SetPosition(controlObject.position);
-          this._parent.SetQuaternion(controlObject.quaternion);
+          this._parent.SetPosition(poosition);
+          this._parent.SetQuaternion(rotation);
         }
     };
   

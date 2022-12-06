@@ -28,10 +28,16 @@ export const person_state = (() => {
             const prevAction = this._parent._proxy._animations[prevState.Name].action;
       
             curAction.enabled = true;
-            curAction.time = 0.0;
-            curAction.setEffectiveTimeScale(1.0);
-            curAction.setEffectiveWeight(1.0);
-            curAction.crossFadeFrom(prevAction, 0.5, true);
+            if (prevState.Name == 'walk_back') {
+              const ratio = curAction.getClip().duration / prevAction.getClip().duration;
+              curAction.time = prevAction.time * ratio;
+            } else {
+              curAction.time = 0.0;
+              curAction.setEffectiveTimeScale(1.0);
+              curAction.setEffectiveWeight(1.0);
+            }
+      
+            curAction.crossFadeFrom(prevAction, 0.1, true);
             curAction.play();
           } else {
             curAction.play();
@@ -41,12 +47,15 @@ export const person_state = (() => {
         Exit() {
         }
       
-        Update(timeElapsed, keys) {
+        Update(_, keys) {
           if (keys.forward ) {
             return;
           } else if (keys.shift){
             this._parent.SetState('shoot');
+          } else if (keys.back){
+            this._parent.SetState('walk_back');
           }
+
       
           this._parent.SetState('idle');
         }
@@ -67,10 +76,16 @@ export const person_state = (() => {
             const prevAction = this._parent._proxy._animations[prevState.Name].action;
       
             curAction.enabled = true;
-            curAction.time = 0.0;
-            curAction.setEffectiveTimeScale(1.0);
-            curAction.setEffectiveWeight(1.0);
-            curAction.crossFadeFrom(prevAction, 0.5, true);
+            if (prevState.Name == 'walk') {
+              const ratio = curAction.getClip().duration / prevAction.getClip().duration;
+              curAction.time = prevAction.time * ratio;
+            } else {
+              curAction.time = 0.0;
+              curAction.setEffectiveTimeScale(1.0);
+              curAction.setEffectiveWeight(1.0);
+            }
+      
+            curAction.crossFadeFrom(prevAction, 0.1, true);
             curAction.play();
           } else {
             curAction.play();
@@ -80,11 +95,13 @@ export const person_state = (() => {
         Exit() {
         }
       
-        Update(timeElapsed, keys) {
+        Update(_, keys) {
           if (keys.backward) {
             return;
           } else if (keys.shift){
             this._parent.SetState('shoot');
+          } else if (keys.forward){
+            this._parent.SetState('walk');
           }
       
           this._parent.SetState('idle');
