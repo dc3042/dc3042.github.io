@@ -19,18 +19,15 @@ export const physics_controller = (() => {
     }
 
     _OnModelMovePosition(m){
-        const physicsBody = this.physicsBody;
+        const physicsBody = this._physicsBody;
+        
+        const ammoTmpPos = new Ammo.btVector3(m.value.x, m.value.y, m.value.z);
       
         const ms = physicsBody.getMotionState();
     
         if(ms){
-            let ammoTmpPos = new Ammo.btVector3(m.value.x, m.value.y, m.value.z);
-            //let ammoTmpQuat = new Ammo.btQuaternion(controlObject.quaternion.x,controlObject.quaternion.y,controlObject.quaternion.z,controlObject.quaternion.w);
-        
-            let transform = new Ammo.btTransform();
-            transform.setIdentity();
+            let transform = this._physicsBody.getWorldTransform();
             transform.setOrigin(ammoTmpPos);
-            //transform.setRotation(ammoTmpQuat);
         
             ms.setWorldTransform(transform);
         }
@@ -38,17 +35,13 @@ export const physics_controller = (() => {
 
     _OnModelMoveRotation(m){
       
-      const physicsBody = this.physicsBody;
+      const physicsBody = this._physicsBody;
+      const ammoTmpQuat = new Ammo.btQuaternion(m.value.x,m.value.y,m.value.z,m.value.w);
     
       const ms = physicsBody.getMotionState();
   
       if(ms){
-          //let ammoTmpPos = new Ammo.btVector3(m.value.x, m.value.y, m.value.z);
-          let ammoTmpQuat = new Ammo.btQuaternion(m.value.x,m.value.y,m.value.z,m.value.w);
-      
-          let transform = new Ammo.btTransform();
-          transform.setIdentity();
-          //transform.setOrigin(ammoTmpPos);
+          let transform = this._physicsBody.getWorldTransform();
           transform.setRotation(ammoTmpQuat);
       
           ms.setWorldTransform(transform);
@@ -57,17 +50,14 @@ export const physics_controller = (() => {
 
     _OnRigidBodyLoad(m) {
 
-        console.log("model");
-        console.log(m.body);
-        console.log(m.shape);
-
         const body = this._CreateRigidBody(m.body, m.shape, m.mass, m.pos, m.quat);
 
         if(m.velocity){
             body.setLinearVelocity( new Ammo.btVector3( 10 * m.velocity.x, 10 * m.velocity.y, 10 * m.velocity.z ) );  
         }
-
-        this.physicsBody = body;
+        else{
+          this._physicsBody= body;
+        }
     }
 
     _CreateRigidBody( threeObject, physicsShape, mass, pos, quat ) {
@@ -111,7 +101,7 @@ export const physics_controller = (() => {
         
         const body = this._CreateSoftBody(m.bufferGeometry, this._params.mass, this._params.pressure)
 
-        this.physicsBody = body;
+        this._physicsBody = body;
       }
 
       _CreateSoftBody(bufferGeometry, mass, pressure ){

@@ -276,9 +276,13 @@ export const person_controller = (() => {
           if (this._keys.forward) {
             velocity.z += acc.z * timeInSeconds;
           }
-          if (this._keys.backward) {
+          else if (this._keys.backward) {
             velocity.z -= acc.z * timeInSeconds;
           }
+          else{
+            velocity.z = 0;
+          }
+
           if (this._keys.left || this._keys.right) {
             _A.set(0, 1, 0);
             
