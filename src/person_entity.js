@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
-import {entity} from '@/entity.js';
-import {person_state} from '@/person_state.js';
+import {entity} from './entity.js';
+import {person_state} from './person_state.js';
 
 
 export const person_entity = (() => {

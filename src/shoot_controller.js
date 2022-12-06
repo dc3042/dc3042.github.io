@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import {entity} from '@/entity.js';
+import {entity} from './entity.js';
 
 
 

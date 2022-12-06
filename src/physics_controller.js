@@ -1,5 +1,5 @@
 
-import {entity} from '@/entity.js';
+import {entity} from './entity.js';
 
 
 export const physics_controller = (() => {
