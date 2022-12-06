@@ -2,12 +2,11 @@ import './style.css';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import * as THREE from 'three';
-import {entity_manager} from './entity_manager.js';
-import {entity} from './entity.js';
-import {person_entity} from './person_entity.js'
-import {person_input} from './person_input.js';
-import {shoot_controller} from './shoot_controller.js';
-import {physics_controller} from './physics_controller.js';
+import {entity_manager} from '@/entity_manager.js';
+import {entity} from '@/entity.js';
+import {person_entity} from '@/person_entity.js';
+import {shoot_controller} from '@/shoot_controller.js';
+import {physics_controller} from '@/physics_controller.js';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -331,8 +330,10 @@ class CharacterShooter {
     }
 
     const player = new entity.Entity();
-    player.AddComponent(new person_input.BasicCharacterControllerInput(params));
     player.AddComponent(new person_entity.BasicCharacterController(params));
+    console.log("test")
+    console.log(player);
+    console.log(player.GetComponent("BasicCharacterController"));
     player.AddComponent(new shoot_controller.ShootController(params));
     player.AddComponent(new physics_controller.PhysicsController(params));
     this._entityManager.Add(player, 'player');

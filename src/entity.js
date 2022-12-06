@@ -90,6 +90,10 @@ export const entity = (() => {
       this._parent = null;
     }
 
+    get Name() {
+      return this._name;
+    }
+
     SetParent(p) {
       this._parent = p;
     }

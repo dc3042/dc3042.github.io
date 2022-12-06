@@ -41,10 +41,10 @@ export const person_state = (() => {
         Exit() {
         }
       
-        Update(timeElapsed, input) {
-          if (input._keys.forward ) {
+        Update(timeElapsed, keys) {
+          if (keys.forward ) {
             return;
-          } else if (input._keys.shift){
+          } else if (keys.shift){
             this._parent.SetState('shoot');
           }
       
@@ -80,10 +80,10 @@ export const person_state = (() => {
         Exit() {
         }
       
-        Update(timeElapsed, input) {
-          if (input._keys.backward) {
+        Update(timeElapsed, keys) {
+          if (keys.backward) {
             return;
-          } else if (input._keys.shift){
+          } else if (keys.shift){
             this._parent.SetState('shoot');
           }
       
@@ -173,13 +173,13 @@ export const person_state = (() => {
         Exit() {
         }
       
-        Update(_, input) {
+        Update(_, keys) {
 
-          if (input._keys.forward) {
+          if (keys.forward) {
             this._parent.SetState('walk');
-          } else if (input._keys.backward){
+          } else if (keys.backward){
             this._parent.SetState('walk_back');
-          } else if (input._keys.shift){
+          } else if (keys.shift){
             this._parent.SetState('shoot');
           }
         }

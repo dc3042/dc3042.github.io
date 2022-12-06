@@ -2,8 +2,8 @@ import * as THREE from 'three';
 
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
-import {entity} from './entity.js';
-import {person_state} from './person_state.js';
+import {entity} from '@/entity.js';
+import {person_state} from '@/person_state.js';
 
 
 export const person_entity = (() => {
@@ -34,9 +34,9 @@ export const person_entity = (() => {
             state.Enter(prevState);
         }
 
-        Update(timeElapsed, input) {
+        Update(timeElapsed, key) {
             if (this._currentState) {
-              this._currentState.Update(timeElapsed, input);
+              this._currentState.Update(timeElapsed, key);
             }
         }
     };
@@ -85,12 +85,69 @@ export const person_entity = (() => {
         
           this._target = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), new THREE.MeshPhongMaterial({color: 0x30ab78}));
           this._target.material.visible = false;
+
+          this._keys = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            space: false,
+            shift: false,
+          };
+          document.addEventListener('keydown', (e) => this._onKeyDown(e), false);
+          document.addEventListener('keyup', (e) => this._onKeyUp(e), false);
       
           this._LoadCharacter();
         }
 
         get target(){
           return this._target;
+        }
+
+        _onKeyDown(event) {
+          switch (event.keyCode) {
+            case 87: // w
+              this._keys.forward = true;
+              break;
+            case 65: // a
+              this._keys.left = true;
+              break;
+            case 83: // s
+              this._keys.backward = true;
+              break;
+            case 68: // d
+              this._keys.right = true;
+              break;
+            case 32: // SPACE
+              this._keys.space = true;
+              break;
+            case 16: // SHIFT
+              this._keys.shift = true;
+              break;
+          }
+        }
+      
+        _onKeyUp(event) {
+          switch(event.keyCode) {
+            case 87: // w
+              this._keys.forward = false;
+              break;
+            case 65: // a
+              this._keys.left = false;
+              break;
+            case 83: // s
+              this._keys.backward = false;
+              break;
+            case 68: // d
+              this._keys.right = false;
+              break;
+            case 32: // SPACE
+              this._keys.space = false;
+              break;
+            case 16: // SHIFT
+              this._keys.shift = false;
+              break;
+          }
         }
 
       
@@ -167,7 +224,7 @@ export const person_entity = (() => {
       
           const input = this.GetComponent('BasicCharacterControllerInput');
 
-          this._stateMachine.Update(timeInSeconds, input);
+          this._stateMachine.Update(timeInSeconds, this._keys);
 
           if (this._mixer) {
             this._mixer.update(timeInSeconds);
@@ -178,6 +235,7 @@ export const person_entity = (() => {
               topic: 'person.action',
               action: this._stateMachine._currentState.Name,
               time: this._stateMachine._currentState._action.time,
+              target: this._target,
             });
           }
 
@@ -205,18 +263,18 @@ export const person_entity = (() => {
       
           const acc = this._acceleration.clone();
       
-          if (input._keys.forward) {
+          if (this._keys.forward) {
             velocity.z += acc.z * timeInSeconds;
           }
-          if (input._keys.backward) {
+          if (this._keys.backward) {
             velocity.z -= acc.z * timeInSeconds;
           }
-          if (input._keys.left) {
+          if (this._keys.left) {
             _A.set(0, 1, 0);
             _Q.setFromAxisAngle(_A, 4.0 * Math.PI * timeInSeconds * this._acceleration.y);
             _R.multiply(_Q);
           }
-          if (input._keys.right) {
+          if (this._keys.right) {
             _A.set(0, 1, 0);
             _Q.setFromAxisAngle(_A, 4.0 * -Math.PI * timeInSeconds * this._acceleration.y);
             _R.multiply(_Q);

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import {entity} from './entity.js';
+import {entity} from '@/entity.js';
 
 
 
@@ -33,7 +33,7 @@ export const shoot_controller = (() => {
       if (oldTiming < this._params.timing && this._timeElapsed >= this._params.timing) {
 
         console.log("shoot bullet");
-        const target = this.GetComponent('BasicCharacterController')._target;
+        const target = m.target;
         
         const quat = target.quaternion;
 
