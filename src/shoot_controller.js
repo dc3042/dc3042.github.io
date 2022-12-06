@@ -20,9 +20,7 @@ export const shoot_controller = (() => {
 
     _OnAnimAction(m) {
 
-        console.log("message");
       if (this._action == null && m.action == 'shoot' ) {
-        console.log("shoot");
         this._action = m.action;
         this._timeElapsed = 0.0;
       }
@@ -32,7 +30,6 @@ export const shoot_controller = (() => {
 
       if (oldTiming < this._params.timing && this._timeElapsed >= this._params.timing) {
 
-        console.log("shoot bullet");
         const target = m.target;
         
         const quat = target.quaternion;
@@ -55,7 +52,7 @@ export const shoot_controller = (() => {
         ballShape.setMargin( 0.05 );
 
         this.Broadcast({
-          topic: 'body.load',
+          topic: 'body.load.rigid',
           body: ball,
           shape: ballShape,
           mass: ballMass,

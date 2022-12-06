@@ -4,17 +4,21 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import * as THREE from 'three';
 import {entity_manager} from './entity_manager.js';
 import {entity} from './entity.js';
-import {person_entity} from './person_entity.js';
+import {person_controller} from './person_controller.js';
 import {shoot_controller} from './shoot_controller.js';
 import {physics_controller} from './physics_controller.js';
+import {softBody_controller} from './softBody_controller.js';
+import {plane_controller} from './plane_controller.js';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 
 class CharacterShooter {
   constructor() {
 
+    this._entityManager = new entity_manager.EntityManager();
+    this._previousRAF = null;
+    
     this._Initialize();
   }
 
@@ -24,15 +28,11 @@ class CharacterShooter {
 
     this._Init_Physics();
 
-    this._entityManager = new entity_manager.EntityManager();
-
     this._LoadAnimatedModel();
 
     this._LoadPlane();
 
     this._LoadSoftBodies();
-
-    this._previousRAF = null;
 
     this._RAF();
   }
@@ -53,7 +53,6 @@ class CharacterShooter {
     //this._physics_world = new Ammo.btDiscreteDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration);
     this._physics_world.setGravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
 
-    this.transformAux1 = new Ammo.btTransform();
     this.softBodyHelpers = new Ammo.btSoftBodyHelpers();
 
     this._soft_bodies = [];
@@ -62,6 +61,7 @@ class CharacterShooter {
   }
 
   _Init_Graphics(){
+
     let container = document.getElementById( 'container' );
     document.body.appendChild( container );
 
@@ -80,14 +80,8 @@ class CharacterShooter {
       this._OnWindowResize();
     }, false);
 
-    const fov = 50;
-    const aspect = window.innerWidth / window.innerHeight;
-    const near = 0.2;
-    const far = 2000;
-    this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    this._camera.position.set( 0, 1, 7 );
-
     this._scene = new THREE.Scene();
+    this._scene.background = new THREE.Color( 0xbfd1e5 );
 
     let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
     light.position.set(-100, 100, 100);
@@ -109,214 +103,75 @@ class CharacterShooter {
     light = new THREE.AmbientLight(0xFFFFFF, 0.25);
     this._scene.add(light);
 
+    const fov = 50;
+    const aspect = window.innerWidth / window.innerHeight;
+    const near = 0.2;
+    const far = 2000;
+    this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    this._camera.position.set( 0, 1, 7 );
+
     const controls = new OrbitControls(
       this._camera, this._threejs.domElement);
     controls.target.set(0, 0.5, 0);
     controls.update();
 
-    this._scene.background = new THREE.Color( 0xbfd1e5 );
-
     this._stats = new Stats();
     this._stats.domElement.style.position = 'absolute';
     this._stats.domElement.style.top = '0px';
     container.appendChild( this._stats.domElement );
+    
   }
 
   _LoadPlane() {
 
-    const plane = new THREE.Mesh(
-      new THREE.BoxGeometry( 100, 1, 100 ),
-      new THREE.MeshStandardMaterial({
-          color: 0x808080,
-        }));
-      
-    plane.castShadow = false;
-    plane.receiveShadow = true;
-
-    const shape = new Ammo.btBoxShape( new Ammo.btVector3( 50, 0.5, 50 ) );
-    shape.setMargin( 0.05 );
-
-    const pos = new THREE.Vector3(0, - 0.5, 0);
-    const quat = new THREE.Quaternion( 0, 0, 0, 1 );
-
-    this._CreateRigidBody( plane, shape, 0, pos, quat );
-
-
-    /**
-    const ball = new THREE.Mesh( new THREE.SphereGeometry( 0.5, 18, 16 ), new THREE.MeshPhongMaterial( { color: 0x202020 } ) );
-    ball.castShadow = true;
-    ball.receiveShadow = true;
-    const ballShape = new Ammo.btSphereShape( 0.5 );
-    ballShape.setMargin( 0.05 );
-
-    this._CreateRigidBody( ball, ballShape, 5, new THREE.Vector3(0, 15, 3), new THREE.Quaternion( 0, 0, 0, 1 ) );
-    */
-  }
-
-  _CreateRigidBody( threeObject, physicsShape, mass, pos, quat ) {
-
-
-    threeObject.position.copy( pos );
-    threeObject.quaternion.copy( quat );
-  
-    let transform = new Ammo.btTransform();
-    transform.setIdentity();
-    transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
-    transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
-    let motionState = new Ammo.btDefaultMotionState( transform );
-  
-    let localInertia = new Ammo.btVector3( 0, 0, 0 );
-    physicsShape.calculateLocalInertia( mass, localInertia );
-  
-    let rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
-    let body = new Ammo.btRigidBody( rbInfo );
-  
-    threeObject.userData.physicsBody = body;
-  
-    this._scene.add( threeObject );
-  
-    if ( mass > 0 ) {
-      this._rigid_bodies.push( threeObject );
-    }
-    else{
-      body.setCollisionFlags( 2 );
+    const params = {
+      scene: this._scene,
+      physics_world: this._physics_world,
+      rigid_bodies: this._rigid_bodies,
+      timing: 0.5
     }
 
-    body.setActivationState( 4 );
-  
-    this._physics_world.addRigidBody( body );
-  
-    return body;
-  
-  }
-
-  processGeometry( bufGeometry ) {
-
-    // Ony consider the position values when merging the vertices
-    const posOnlyBufGeometry = new THREE.BufferGeometry();
-    posOnlyBufGeometry.setAttribute( 'position', bufGeometry.getAttribute( 'position' ) );
-    posOnlyBufGeometry.setIndex( bufGeometry.getIndex() );
-  
-    // Merge the vertices so the triangle soup is converted to indexed triangles
-    const indexedBufferGeom = BufferGeometryUtils.mergeVertices( posOnlyBufGeometry );
-  
-    // Create index arrays mapping the indexed vertices to bufGeometry vertices
-    this.mapIndices( bufGeometry, indexedBufferGeom );
-  
-  }
-
-  isEqual( x1, y1, z1, x2, y2, z2 ) {
-
-    const delta = 0.000001;
-    return Math.abs( x2 - x1 ) < delta &&
-        Math.abs( y2 - y1 ) < delta &&
-        Math.abs( z2 - z1 ) < delta;
-  
-  }
-  
-  mapIndices( bufGeometry, indexedBufferGeom ) {
-  
-    // Creates ammoVertices, ammoIndices and ammoIndexAssociation in bufGeometry
-  
-    const vertices = bufGeometry.attributes.position.array;
-    const idxVertices = indexedBufferGeom.attributes.position.array;
-    const indices = indexedBufferGeom.index.array;
-  
-    const numIdxVertices = idxVertices.length / 3;
-    const numVertices = vertices.length / 3;
-  
-    bufGeometry.ammoVertices = idxVertices;
-    bufGeometry.ammoIndices = indices;
-    bufGeometry.ammoIndexAssociation = [];
-  
-    for ( let i = 0; i < numIdxVertices; i ++ ) {
-  
-      const association = [];
-      bufGeometry.ammoIndexAssociation.push( association );
-  
-      const i3 = i * 3;
-  
-      for ( let j = 0; j < numVertices; j ++ ) {
-  
-        const j3 = j * 3;
-        if ( this.isEqual( idxVertices[ i3 ], idxVertices[ i3 + 1 ], idxVertices[ i3 + 2 ],
-          vertices[ j3 ], vertices[ j3 + 1 ], vertices[ j3 + 2 ] ) ) {
-  
-          association.push( j3 );
-  
-        }
-  
-      }
-  
-    }
-  
-  }
-  
-
-  _CreateSoftBody(bufferGeom, mass, pressure ) {
-
-    this.processGeometry( bufferGeom );
-  
-    const volume = new THREE.Mesh( bufferGeom, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
-    volume.castShadow = true;
-    volume.receiveShadow = true;
-    volume.frustumCulled = false;
-    this._scene.add( volume );
-  
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load( 'colors.png', function ( texture ) {
-  
-      volume.material.map = texture;
-      volume.material.needsUpdate = true;
-  
-    } );
-  
-    // Volume physic object
-  
-    const volumeSoftBody = this.softBodyHelpers.CreateFromTriMesh(
-      this._physics_world.getWorldInfo(),
-      bufferGeom.ammoVertices,
-      bufferGeom.ammoIndices,
-      bufferGeom.ammoIndices.length / 3,
-      true );
-  
-    const sbConfig = volumeSoftBody.get_m_cfg();
-    sbConfig.set_viterations( 40 );
-    sbConfig.set_piterations( 40 );
-  
-    // Soft-soft and soft-rigid collisions
-    sbConfig.set_collisions( 0x11 );
-  
-    // Friction
-    sbConfig.set_kDF( 0.1 );
-    // Damping
-    sbConfig.set_kDP( 0.01 );
-    // Pressure
-    sbConfig.set_kPR( pressure );
-    // Stiffness
-    volumeSoftBody.get_m_materials().at( 0 ).set_m_kLST( 0.9 );
-    volumeSoftBody.get_m_materials().at( 0 ).set_m_kAST( 0.9 );
-  
-    volumeSoftBody.setTotalMass( mass, false );
-    Ammo.castObject( volumeSoftBody, Ammo.btCollisionObject ).getCollisionShape().setMargin( 0.05 );
-    this._physics_world.addSoftBody( volumeSoftBody, 1, - 1 );
-    volume.userData.physicsBody = volumeSoftBody;
-    // Disable deactivation
-    volumeSoftBody.setActivationState( 4 );
-  
-    this._soft_bodies.push( volume );
-  
+    const plane = new entity.Entity();
+    plane.AddComponent(new physics_controller.PhysicsController(params));
+    plane.AddComponent(new plane_controller.PlaneController(params));
+    this._entityManager.Add(plane, 'plane');
   }
 
   _LoadSoftBodies() {
 
-    const sphereGeometry = new THREE.SphereGeometry( 1, 40, 25 );
-    sphereGeometry.translate( 3.5, 3, 0 );
-    this._CreateSoftBody( sphereGeometry, 15, 250 );
+    const params_sphere = {
+      scene: this._scene,
+      physics_world: this._physics_world,
+      soft_bodies: this._soft_bodies,
+      softBodyHelpers: this.softBodyHelpers,
+      bufferGeometry: new THREE.SphereGeometry( 1, 40, 25 ),
+      position: new THREE.Vector3(3,3,0),
+      mass: 15,
+      pressure: 250,
+      texture: 'colors.png'
+    }
 
-    const boxGeometry = new THREE.BoxGeometry( 1, 1, 5, 4, 4, 20 );
-    boxGeometry.translate( - 3.5, 3, 0 );
-    this._CreateSoftBody( boxGeometry, 15, 120 );
+    const sphere_softBody = new entity.Entity();
+    sphere_softBody.AddComponent(new physics_controller.PhysicsController(params_sphere));
+    sphere_softBody.AddComponent(new softBody_controller.SoftBodyController(params_sphere));
+    this._entityManager.Add(sphere_softBody, 'sphere_softBody');
+
+    const params_box = {
+      scene: this._scene,
+      physics_world: this._physics_world,
+      soft_bodies: this._soft_bodies,
+      softBodyHelpers: this.softBodyHelpers,
+      bufferGeometry: new THREE.BoxGeometry( 1, 1, 5, 4, 4, 20 ),
+      position: new THREE.Vector3(-3,3,0),
+      mass: 15,
+      pressure: 150,
+      texture: 'colors.png'
+    }
+
+    const box_softBody = new entity.Entity();
+    box_softBody.AddComponent(new physics_controller.PhysicsController(params_box));
+    box_softBody.AddComponent(new softBody_controller.SoftBodyController(params_box));
+    this._entityManager.Add(box_softBody, 'box_softBody');
 
   }
 
@@ -330,7 +185,7 @@ class CharacterShooter {
     }
 
     const player = new entity.Entity();
-    player.AddComponent(new person_entity.BasicCharacterController(params));
+    player.AddComponent(new person_controller.BasicCharacterController(params));
     player.AddComponent(new shoot_controller.ShootController(params));
     player.AddComponent(new physics_controller.PhysicsController(params));
     this._entityManager.Add(player, 'player');
@@ -366,9 +221,7 @@ class CharacterShooter {
 
     this._entityManager.Update(timeElapsedS);
 
-    if(this._physics_world){
-      this._StepPhysics(timeElapsedS)
-    }
+    this._StepPhysics(timeElapsedS);
   }
 
   _StepPhysics(timeElapsed) {

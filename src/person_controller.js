@@ -6,7 +6,7 @@ import {entity} from './entity.js';
 import {person_state} from './person_state.js';
 
 
-export const person_entity = (() => {
+export const person_controller = (() => {
 
     class FiniteStateMachine {
         constructor() {
@@ -205,7 +205,7 @@ export const person_entity = (() => {
             shape.setMargin( 0.05 );
 
             this.Broadcast({
-              topic: 'body.load',
+              topic: 'body.load.rigid',
               body: this._target,
               shape: shape,
               mass: 0,
@@ -299,10 +299,8 @@ export const person_entity = (() => {
           controlObject.position.add(forward);
           controlObject.position.add(sideways);
 
-          this.Broadcast({
-            topic: 'body.move',
-            controlObject: controlObject,
-          });
+          this._parent.SetPosition(controlObject.position);
+          this._parent.SetQuaternion(controlObject.quaternion);
         }
     };
   
