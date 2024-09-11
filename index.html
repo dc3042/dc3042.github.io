@@ -1,32 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>David's Website</title>
-  </head>
-  <body>
-
-    <div id="container">
-    </div>
-
-		<script src="./ammo.wasm.js"></script>
-
-		<!-- Import maps polyfill -->
-		<!-- Remove this when import maps will be widely supported -->
-		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - CV</title>
     <style>
-			a {
-				color: blue;
-			}
-			.control-inactive button {
-				color: #888;
-			}
-		</style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background: #007BFF;
+            color: white;
+        }
+        h1 {
+            margin: 0;
+        }
+        section {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007BFF;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        #toggleContent {
+            display: none; /* Initially hidden */
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+        }
+        button {
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
 
+<header>
+    <h1>Your Name</h1>
+    <p>Your Job Title</p>
+    <p>Email: your.email@example.com | Phone: (123) 456-7890</p>
+</header>
+
+<section>
+    <h2>About Me</h2>
+    <p>Write a brief introduction about yourself here. Highlight your professional background and key skills.</p>
+</section>
+
+<section>
+    <h2>Experience</h2>
+    <ul>
+        <li><strong>Job Title 1</strong> - Company Name (Year - Year)</li>
+        <p>Responsibilities and achievements in this role.</p>
+        <li><strong>Job Title 2</strong> - Company Name (Year - Year)</li>
+        <p>Responsibilities and achievements in this role.</p>
+    </ul>
+</section>
+
+<section>
+    <h2>Education</h2>
+    <ul>
+        <li><strong>Degree</strong> - Major, University Name (Year)</li>
+        <li><strong>Additional Certifications/Training</strong></li>
+    </ul>
+</section>
+
+<section>
+    <h2>Skills</h2>
+    <ul>
+        <li>Skill 1</li>
+        <li>Skill 2</li>
+        <li>Skill 3</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Projects</h2>
+    <ul>
+        <li><strong>Project Title</strong> - Brief description of the project.</li>
+        <li><strong>Project Title</strong> - Brief description of the project.</li>
+    </ul>
+</section>
+
+<section>
+    <h2>Contact</h2>
+    <p>If you would like to reach out, feel free to send me an email at <a href="mailto:your.email@example.com">your.email@example.com</a>.</p>
+</section>
+
+<!-- Toggle Button -->
+<button id="toggleButton">Just For Fun!</button>
+
+<!-- Content to Toggle -->
+<div id="toggleContent">
+    <script src="./ammo.wasm.js"></script>
+    <!-- Import maps polyfill -->
+    <!-- Remove this when import maps will be widely supported -->
+    <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
     <script type="module" defer src="./src/main.js"></script>
+</div>
 
-
-  </body>
-</html>
+<script>
+    // JavaScript function to toggle visibility
+    document.getElementById('toggleButton').addEventListener('click', function() {
+        const content = document.getElementById('toggleContent');
+        if (content.style.display === "none" || content.style.display === "") {
+            content.style.display = "block"; // Show the content
+        } else {
+            content.style.display = "none"; // Hide the content
+        }
