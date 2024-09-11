@@ -1,0 +1,179 @@
+.profile-image {
+    max-width: 220px; /* Reduced size */
+    border-radius: 50%; /* To make it a perfect circle */
+    display: block;
+    margin: 10px auto; /* Reduced margin */
+    border: 1px solid #adc7e2; /* Add a border/frame */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+}
+
+/* Overall background for the body */
+body {
+    background-color: #f4f4f4;
+    font-size: large;
+}
+
+/* Navbar styling */
+.navbar {
+    background-color: #f8f9fa; /* Light background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* subtle shadow */
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.navbar-brand, .nav-link {
+    font-family: 'Raleway', sans-serif; /* Clean font */
+    font-size: 1.1em; /* increased font size */
+    color: #333; /* Darker text for contrast */
+    margin-right: 80px; /* More spacing between links */
+}
+
+.nav-link:hover {
+    color: #007BFF; /* Color change on hover */
+    transition: color 0.3s ease; /* Smooth transition */
+}
+
+/* Adjust toggle button (hamburger icon) for mobile if necessary */
+.navbar-toggler-icon {
+    background-color: #333; 
+}
+
+.news-item:hover {
+    background-color: #e6e6e6;
+}
+
+.news-date {
+    font-weight: bold;
+    margin-right: 10px;
+    color: #007bff; /* Matching the bootstrap primary blue */
+    /* padding-right: 0; */
+}
+
+.news-item p {
+    display: inline;
+    margin-left: 10px;
+}
+
+/* Headings for sections like Publications and Teaching */
+h2 {
+    font-size: 28px; 
+    font-family: 'Quicksand', sans-serif;
+    margin-top: 20px; /* Space above the heading */
+}
+
+/* General separation between sections */
+section {
+    padding: 5px 0; /* 20px padding to the top and bottom */
+    border-bottom: 1px solid #eee; /* Adds a light gray line beneath each section */
+    margin-bottom: 10px; /* Space below each section */
+}
+
+section:last-of-type {
+    border-bottom: none;
+}
+
+.news-date {
+    font-weight: bold;
+}
+
+.sticky-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Ensures navbar stays on top of other content */
+}
+
+
+.bio-links a {
+    text-decoration: none;
+    margin: 0 5px;
+    color: #007bff;  /* Bootstrap default link color */
+}
+
+.bio-links a:hover {
+    text-decoration: underline;
+}
+
+.bio-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically centers the children when there's extra space */
+    height: 100%;
+}
+
+.bio-links {
+    display: flex;
+    justify-content: center; /* Horizontally centers the links */
+    align-items: center; /* Vertically centers the links */
+}
+
+.contact-info {
+    font-family: 'Georgia', serif;
+    font-style: italic;
+    font-size: 1.2em;
+    margin-top: 15px;
+    color: rgba(0, 0, 0, 0.4);  /* 70% opaque black, which will appear grayish */
+}
+
+.publication {
+    clear: both;
+    margin-bottom: 25px;
+}
+
+.pub-thumbnail img {
+    border-radius: 10%;
+    box-shadow: 0 0 5px rgba(0,0,0,0.0.15);
+}
+
+.pub-title {
+    font-weight: 600; /* Bold for title */
+    margin-bottom: 5px;
+}
+
+.pub-authors {
+    font-size: 90%; /* Slightly smaller text for authors */
+}
+
+.teaching-header {
+    font-weight: bold;
+    margin-bottom: 1em;
+}
+
+.teaching-content {
+    display: flex;
+    flex-direction: column; /* Stacking elements vertically */
+    align-items: flex-start;
+    margin-bottom: 1.5em;
+}
+
+.teaching-role {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 0.5em; /* Space between role and courses */
+}
+
+.teaching-date {
+    color: grey;
+    font-style: italic;
+}
+
+.teaching-courses {
+    color: grey;
+    font-style: italic;
+    margin-left: 1em;
+    margin-bottom: 1em;
+}
+
+.teaching-courses li {
+    margin-bottom: 0.5em; /* Space between each course */
+}
+
+.bold-my-name {
+    font-weight: bold;
+}
+
+.anchor {
+    display: block;
+    height: 60px;  /* Adjust this value based on your navbar's height */
+    margin-top: -60px;
+    visibility: hidden;
+}
