@@ -118,18 +118,21 @@
     <script>
 
         document.getElementById('contentA').style.display = 'block';
-
+        document.getElementById('toggleButton').textContent = "Click For Fun"
         
         document.getElementById('toggleButton').addEventListener('click', function() {
             const content = document.getElementById('game');
             const main = document.getElementById('contentA');
+            const toggleButton = document.getElementById('toggleButton');
 
             if (main.style.display === 'none') {
                 main.style.display = 'block';
                 content.style.display = 'none';
+                toggleButton.textContent = "Click for Fun!"
             } else {
                 content.style.display = 'block';
                 main.style.display = 'none';
+                toggleButton.textContent = "Stop the Fun :("
             }
         });
     </script>
