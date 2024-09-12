@@ -26,7 +26,7 @@
     <script type="module" crossorigin src="/assets/index.235470cc.js"></script>
     <!--<link rel="stylesheet" href="/assets/index.3d5648f3.css">-->
     <style>
-        #contentA, #contentB {
+        #contentA, #game {
             display: none;
         }
     </style>
@@ -89,23 +89,29 @@
         </div>
 
         <!-- Conditional Content -->
-        <div id="contentB">
-            <script src="./ammo.wasm.js"></script>
-            <!-- Import maps polyfill -->
-            <!-- Remove this when import maps will be widely supported -->
-            <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
+        <div id="game">
+            <section id="about" class="mb-5">
+            <div class="row d-flex align-items-center">
+                 <div id="contentB" class="col-md-8">
+                    <script src="./ammo.wasm.js"></script>
+                    <!-- Import maps polyfill -->
+                    <!-- Remove this when import maps will be widely supported -->
+                    <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
+                 </div>
 
-            <div id="container">
-                <div class="control-ui">
-                    <div class="control-text-title" id="control-text-title">Controls</div>
-                    <div class="control-text" id="control-text"> w: forward </div>
-                    <div class="control-text" id="control-text"> a: left </div>
-                    <div class="control-text" id="control-text"> s: back </div>
-                    <div class="control-text" id="control-text"> d: right </div>
-                    <div class="control-text" id="control-text"> shift: shoot ball </div>
-                    <div class="control-text" id="control-text"> enter: change view </div>
+                <div class="col-md-4">
+                    <div class="control-ui">
+                        <div class="control-text-title" id="control-text-title">Controls</div>
+                        <div class="control-text" id="control-text"> w: forward </div>
+                        <div class="control-text" id="control-text"> a: left </div>
+                        <div class="control-text" id="control-text"> s: back </div>
+                        <div class="control-text" id="control-text"> d: right </div>
+                        <div class="control-text" id="control-text"> shift: shoot ball </div>
+                        <div class="control-text" id="control-text"> enter: change view </div>
+                    </div>
                 </div>
             </div>
+            </section>
         </div>
 
 
@@ -117,7 +123,7 @@
 
             
             document.getElementById('toggleButton').addEventListener('click', function() {
-                const content = document.getElementById('contentB');
+                const content = document.getElementById('game');
                 const main = document.getElementById('contentA');
 
                 if (main.style.display === 'none') {
