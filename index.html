@@ -21,15 +21,10 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
     <!-- Ammo -->
     <script type="module" crossorigin src="/assets/index.235470cc.js"></script>
     <link rel="stylesheet" href="/assets/index.3d5648f3.css">
-    <style>
-        #main, #container {
-            display: none;
-        }
-    </style>
 </head>
 
 <body>
@@ -61,7 +56,7 @@
     <!-- End of Navigation Bar -->
 
     <!-- Start of Main Content -->
-    <div id="main" class="container mt-5 main-content">
+    <div class="container mt-5 main-content">
         <!-- About Me Section -->
         <section id="about" class="mb-5">
             <h1 style="font-family: 'Railway'; font-size: 2.5em;">David Cho</h1>
@@ -84,26 +79,29 @@
                 </div>
             </div>
         </section>
-        <!-- News, Publications, and Teaching Sections here... -->
-    </div>
 
-    <div id="container" class="container mt-5 main-content">
-        <script src="./ammo.wasm.js"></script>
-        <!-- Import maps polyfill -->
-        <!-- Remove this when import maps will be widely supported -->
-        <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
+        <!-- Conditional Content -->
+        <div id="contentB" style="display: none;">
+            <script src="./ammo.wasm.js"></script>
+            <!-- Import maps polyfill -->
+            <!-- Remove this when import maps will be widely supported -->
+            <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
 
-        <div id="control">
-            <div class="control-ui">
-                <div class="control-text-title" id="control-text-title">Controls</div>
-                <div class="control-text" id="control-text"> w: forward </div>
-                <div class="control-text" id="control-text"> a: left </div>
-                <div class="control-text" id="control-text"> s: back </div>
-                <div class="control-text" id="control-text"> d: right </div>
-                <div class="control-text" id="control-text"> shift: shoot ball </div>
-                <div class="control-text" id="control-text"> enter: change view </div>
+            <div id="container">
+                <div class="control-ui">
+                    <div class="control-text-title" id="control-text-title">Controls</div>
+                    <div class="control-text" id="control-text"> w: forward </div>
+                    <div class="control-text" id="control-text"> a: left </div>
+                    <div class="control-text" id="control-text"> s: back </div>
+                    <div class="control-text" id="control-text"> d: right </div>
+                    <div class="control-text" id="control-text"> shift: shoot ball </div>
+                    <div class="control-text" id="control-text"> enter: change view </div>
+                </div>
             </div>
         </div>
+
+        <!-- News, Publications, and Teaching Sections here... -->
+        
     </div>
     <!-- End of Main Content -->
 
@@ -120,21 +118,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
 
     <script>
-
-        document.getElementById('main').style.display = 'block';
-
-        
         document.getElementById('toggleButton').addEventListener('click', function() {
-            const content = document.getElementById('container');
-            const main = document.getElementById('main');
-
-            if (main.style.display === 'none') {
-                main.style.display = 'block';
-                content.style.display = 'none';
-            } else {
-                content.style.display = 'block';
-                main.style.display = 'none';
-            }
+            const content = document.getElementById('contentB');
+            content.style.display = content.style.display === 'none' ? 'block' : 'none';
         });
     </script>
 
