@@ -61,80 +61,78 @@
     <!-- End of Navigation Bar -->
 
     <!-- Start of Main Content -->
-    <div class="container mt-5 main-content">
+    <div id="contentA" class="container mt-5 main-content">
 
-        <div id="contentA">
-            <!-- About Me Section -->
-            <section id="about" class="mb-5">
-                <h1 style="font-family: 'Railway'; font-size: 2.5em;">David Cho</h1>
-                <div class="row d-flex align-items-center">
-                    <div class="col-md-8">
-                        <p class="contact-info"><strong>email[at]example[dot]com</strong></p>
-                        <p>
-                            Hello! My name is Dong Heon (David) Cho! Hello World! Did it work?
-                        </p>
-                        <div class="bio-links">
-                            <a href="#" title="CV">CV</a> /    
-                            <a href="#" title="Google Scholar"><i class="fas fa-graduation-cap"></i></a> /  
-                            <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a> /
-                            <a href="#" title="Github"><i class="fab fa-github"></i></a> /
-                            <a href="#" title="Linkedin"><i class="fab fa-linkedin"></i></a>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <img src="assets/placeholder.jpg" alt="David Cho" class="img-fluid rounded-circle profile-image">
+        <!-- About Me Section -->
+        <section id="about" class="mb-5">
+            <h1 style="font-family: 'Railway'; font-size: 2.5em;">David Cho</h1>
+            <div class="row d-flex align-items-center">
+                <div class="col-md-8">
+                    <p class="contact-info"><strong>email[at]example[dot]com</strong></p>
+                    <p>
+                        Hello! My name is Dong Heon (David) Cho! Hello World! Did it work?
+                    </p>
+                    <div class="bio-links">
+                        <a href="#" title="CV">CV</a> /    
+                        <a href="#" title="Google Scholar"><i class="fas fa-graduation-cap"></i></a> /  
+                        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a> /
+                        <a href="#" title="Github"><i class="fab fa-github"></i></a> /
+                        <a href="#" title="Linkedin"><i class="fab fa-linkedin"></i></a>
                     </div>
                 </div>
-            </section>
-        </div>
+                <div class="col-md-4">
+                    <img src="assets/placeholder.jpg" alt="David Cho" class="img-fluid rounded-circle profile-image">
+                </div>
+            </div>
+        </section>
+    </div>
 
-        <!-- Conditional Content -->
-        <div id="game">
-            <div class="row">
-                 <div id="contentB" class="col">
-                    <script src="./ammo.wasm.js"></script>
-                    <!-- Import maps polyfill -->
-                    <!-- Remove this when import maps will be widely supported -->
-                    <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
-                 </div>
+    <!-- Conditional Content -->
+    <div id="game">
+        <div class="row">
+             <div id="contentB" class="col">
+                <script src="./ammo.wasm.js"></script>
+                <!-- Import maps polyfill -->
+                <!-- Remove this when import maps will be widely supported -->
+                <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
+             </div>
 
-                <div class="col">
-                    <div class="control-ui">
-                        <div class="control-text-title" id="control-text-title">Controls</div>
-                        <div class="control-text" id="control-text"> w: forward </div>
-                        <div class="control-text" id="control-text"> a: left </div>
-                        <div class="control-text" id="control-text"> s: back </div>
-                        <div class="control-text" id="control-text"> d: right </div>
-                        <div class="control-text" id="control-text"> shift: shoot ball </div>
-                        <div class="control-text" id="control-text"> enter: change view </div>
-                    </div>
+            <div class="col">
+                <div class="control-ui">
+                    <div class="control-text-title" id="control-text-title">Controls</div>
+                    <div class="control-text" id="control-text"> w: forward </div>
+                    <div class="control-text" id="control-text"> a: left </div>
+                    <div class="control-text" id="control-text"> s: back </div>
+                    <div class="control-text" id="control-text"> d: right </div>
+                    <div class="control-text" id="control-text"> shift: shoot ball </div>
+                    <div class="control-text" id="control-text"> enter: change view </div>
                 </div>
             </div>
         </div>
-
-
-        <!-- News, Publications, and Teaching Sections here... -->
-
-        <script>
-
-            document.getElementById('contentA').style.display = 'block';
-
-            
-            document.getElementById('toggleButton').addEventListener('click', function() {
-                const content = document.getElementById('game');
-                const main = document.getElementById('contentA');
-
-                if (main.style.display === 'none') {
-                    main.style.display = 'block';
-                    content.style.display = 'none';
-                } else {
-                    content.style.display = 'block';
-                    main.style.display = 'none';
-                }
-            });
-        </script>
-        
     </div>
+
+
+    <!-- News, Publications, and Teaching Sections here... -->
+
+    <script>
+
+        document.getElementById('contentA').style.display = 'block';
+
+        
+        document.getElementById('toggleButton').addEventListener('click', function() {
+            const content = document.getElementById('game');
+            const main = document.getElementById('contentA');
+
+            if (main.style.display === 'none') {
+                main.style.display = 'block';
+                content.style.display = 'none';
+            } else {
+                content.style.display = 'block';
+                main.style.display = 'none';
+            }
+        });
+    </script>
+        
     <!-- End of Main Content -->
 
     <!-- Start of Footer -->
