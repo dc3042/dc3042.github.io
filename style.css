@@ -177,3 +177,25 @@ section:last-of-type {
     margin-top: -60px;
     visibility: hidden;
 }
+
+
+
+.control-ui {
+    margin: 0;                 /* Remove default margin */
+}
+
+.control-text-title {
+    font-size: 1.5em;          /* Larger font size for the title */
+    font-weight: bold;          /* Bold title */
+    margin-bottom: 10px;       /* Space below the title */
+    color: #333;                /* Dark color for title */
+}
+
+.control-text {
+    font-size: 1em;             /* Standard font size */
+    color: #555;                /* Softer dark color for text */
+    margin: 5px 0;             /* Space between controls */
+    background-color: #f9f9f9; /* Light grey background for text items */
+    padding: 5px;              /* Padding inside text items */
+    border-radius: 4px;        /* Rounded corners for text items */
+}
