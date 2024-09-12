@@ -178,18 +178,6 @@ section:last-of-type {
     visibility: hidden;
 }
 
-#ui-container {
-    background-color: #ffffff; /* White background for the container */
-    border-radius: 8px;        /* Rounded corners */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    padding: 20px;              /* Padding inside the container */
-    max-width: 300px;          /* Maximum width for compactness */
-    text-align: left;          /* Align text to the left */
-}
-
-.control-ui {
-    margin: 0;                 /* Remove default margin */
-}
 
 .control-text-title {
     font-size: 1.5em;          /* Larger font size for the title */
