@@ -90,13 +90,6 @@
     <!-- Conditional Content -->
     <div id="game">
         <div class="row">
-             <div id="contentB" class="col">
-                <script src="./ammo.wasm.js"></script>
-                <!-- Import maps polyfill -->
-                <!-- Remove this when import maps will be widely supported -->
-                <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
-             </div>
-
             <div class="col">
                 <div class="control-ui">
                     <div class="control-text-title" id="control-text-title">Controls</div>
@@ -108,6 +101,14 @@
                     <div class="control-text" id="control-text"> enter: change view </div>
                 </div>
             </div>
+            
+             <div id="contentB" class="col">
+                <script src="./ammo.wasm.js"></script>
+                <!-- Import maps polyfill -->
+                <!-- Remove this when import maps will be widely supported -->
+                <script async src="https://unpkg.com/es-module-shims@1.6.2/dist/es-module-shims.js"></script>
+             </div>
+
         </div>
     </div>
 
