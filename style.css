@@ -122,6 +122,7 @@ section:last-of-type {
 .pub-thumbnail img {
     border-radius: 10%;
     box-shadow: 0 0 5px rgba(0,0,0,0.0.15);
+    height: 100px; width: 100px; overflow: hidden;
 }
 
 .pub-title {
